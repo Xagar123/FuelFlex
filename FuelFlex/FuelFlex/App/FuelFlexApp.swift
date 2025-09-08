@@ -9,9 +9,20 @@ import SwiftUI
 
 @main
 struct FuelFlexApp: App {
+    
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    @State private var showSplash = true
+    
     var body: some Scene {
         WindowGroup {
-            SplashScreenView()
+            if showSplash {
+                SplashScreenView(showSplash: $showSplash)
+            } else {
+                GetStartedView()
+            }
         }
     }
 }
+
+

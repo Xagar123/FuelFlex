@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  SplashScreenView.swift
 //  FuelFlex
 //
 //  Created by sagar on 06/09/25.
@@ -9,102 +9,76 @@ import SwiftUI
 
 struct SplashScreenView: View {
     
-    @State private var scale: CGFloat = 0.6
-    @State private var opacity: Double = 0.0
-    @State private var glow: Bool = false
-    @State private var navigateToLogin = false
+    @Binding var showSplash: Bool
+    @State var animate: Bool = false
+    @State var repeatCount: Int = 0
     
     var body: some View {
         ZStack {
-            // Background Gradient (from ColorTheme)
-            ColorTheme.splashGradient
-                .ignoresSafeArea()
+            //background color
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: ColorTheme.background, location: 0.0),   // top
+                    .init(color: ColorTheme.background, location: 0.5),   // middle
+                    .init(color: ColorTheme.primary, location: 1.0)       // bottom
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
-            VStack(spacing: 20) {
-                
-                Spacer()
-                // Logo with bounce + glow
-                Image("fuelFlexLogo") // Put logo in Assets.xcassets
+            VStack(spacing: -4) {
+                // Logo
+                Image("fuelFlexLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 180, height: 180)
-                    .scaleEffect(scale)
-                    .shadow(color: glow ? ColorTheme.primary.opacity(0.8) : .clear,
-                            radius: 20, x: 0, y: 0)
-                    .onAppear {
-                        withAnimation(.spring(response: 0.6,
-                                              dampingFraction: 0.5,
-                                              blendDuration: 0)) {
-                            self.scale = 1.0
-                        }
-                        withAnimation(.easeInOut(duration: 1)
-                            .repeatForever(autoreverses: true)) {
-                                self.glow.toggle()
-                            }
-                    }
+                    .frame(width: 260, height: 260)
+                    .scaleEffect(animate ? 1.0 : 0.6)
+                    .opacity(animate ? 1.0 : 0.3)
+                    .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
+                    .padding(.bottom, -16) // optional fine-tuning
                 
-                Spacer()
-                
-                // MARK: - Branding & Motivation
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Fuel your body.")
-                        .font(.custom("Poppins-Bold", size: 28))
-                        .foregroundColor(ColorTheme.textPrimary)
+                // Tagline
+                VStack(spacing: 6) { // reduce spacing between texts
+                    Text("FUEL YOUR BODY.")
+                        .font(.custom("FXLogo-Bold", size: 26))
+                    //                        .foregroundColor(ColorTheme.secondary.opacity(0.8))
                     
-                    Text("Flex your limits.")
-                        .font(.custom("Poppins-Bold", size: 28))
-                        .foregroundColor(ColorTheme.primary)
+                    Text("FLEX YOUR LIMITS.")
+                        .font(.custom("FXLogo-Bold", size: 30))
+                    //                        .foregroundColor(ColorTheme.secondary.opacity(0.8))
                     
-                    Text("Your AI-powered fitness buddy to track nutrition, plan workouts, and push you towards your goals.")
-                        .font(.custom("Poppins-Regular", size: 14))
-                        .foregroundColor(ColorTheme.textPrimary)
-                        .padding(.top, 4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 24)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [ColorTheme.secondary, Color.white],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .kerning(1.5)
+                .padding(.vertical, 2)
                 
-                Spacer().frame(height: 30)
-                
-                // MARK: - Get Started Button
-                Button(action: {
-                    navigateToLogin = true
-                }) {
-                    Text("Get Started")
-                        .font(.custom("Poppins-SemiBold", size: 18))
-                        .fontWeight(.bold)
-                        .foregroundColor(ColorTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(ColorTheme.buttonGradientSoft)
-                        .cornerRadius(16)
-                        .shadow(radius: 5)
+            }
+            
+        }
+        .onAppear {
+            withAnimation(
+                .easeInOut(duration: 1.0)
+                .repeatCount(3, autoreverses: true)
+            ) {
+                animate = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation {
+                    showSplash = false
                 }
-                .padding(.horizontal, 24)
-                
-                // MARK: - Sign In Option
-                Button(action: {
-                    navigateToLogin = true
-                }) {
-                    HStack {
-                        Text("Already have an account?")
-                            .font(.custom("Poppins-Regular", size: 16))
-                            .foregroundColor(ColorTheme.textPrimary)
-                        Text("Sign in")
-                            .font(.custom("Poppins-SemiBold", size: 16))
-                            .foregroundColor(ColorTheme.textPrimary)
-                    }
-                }
-                .padding(.top)
-                .padding(.bottom, 24)
             }
         }
-               // Navigation to Login Screen
-//               .fullScreenCover(isPresented: $navigateToLogin) {
-////                   LoginView()
-//               }
     }
 }
 
 #Preview {
-    SplashScreenView()
+    SplashScreenView(showSplash: .constant(true))
 }
