@@ -16,6 +16,8 @@ struct LoginView: View {
     @State private var opacity: Double = 0.0
     @State private var glow: Bool = false
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var viewModel: AuthViewModel 
+    
     
     var body: some View {
         NavigationStack {
@@ -56,7 +58,9 @@ struct LoginView: View {
                     
                     // Login Button
                     Button(action: {
-                        print("Login tapped")
+                        Task {
+                            try await viewModel.signIn(withEmail: email, password: password)
+                        }
                     }) {
                         
                         Text("Log In")

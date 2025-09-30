@@ -11,16 +11,13 @@ import SwiftUI
 struct FuelFlexApp: App {
     
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
-    @State private var showSplash = true
+   
+    @StateObject var viewModel = AuthViewModel()
     
     var body: some Scene {
         WindowGroup {
-            if showSplash {
-                SplashScreenView(showSplash: $showSplash)
-            } else {
-                GetStartedView()
-            }
+            MainView()
+                .environmentObject(viewModel)
         }
     }
 }

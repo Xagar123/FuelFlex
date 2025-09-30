@@ -12,7 +12,7 @@ struct ProfileView: View {
         List {
             Section {
                 HStack {
-                    Text("S")
+                    Text(User.MOCK_USER.initial  )
                         .font(.title)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
@@ -21,23 +21,51 @@ struct ProfileView: View {
                         .clipShape(Circle())
                     
                     VStack(alignment: .leading) {
-                        Text("Sagar")
+                        Text(User.MOCK_USER.fullName)
                             .font(.headline)
                             .padding(.top,4)
-                        Text("sagar@gmail.com")
+                        Text(User.MOCK_USER.email )
                             .font(.footnote)
-                            .accentColor(.secondary)
+                            .foregroundColor(.gray  )
                     }
-                    .padding(.leading)
+                    .padding(.leading)   
                 }
             }
             
             Section("General") {
-                
+                HStack {
+                    SettingRowView(
+                        imageName: "gear" ,
+                        title: "Version",
+                        tintColor: Color(.systemGray))
+                    
+                    Spacer()
+                    
+                    Text("1.0.0")
+                        .font(.subheadline)
+                        .foregroundColor(.gray  )
+                }
             }
             
             Section("Account"){
-                
+                Button {
+                    print("Sign out....")
+                } label: {
+                    SettingRowView(
+                        imageName: "arrow.left.circle.fill" ,
+                        title: "Sign out",
+                        tintColor: .red)
+                }
+
+                Button {
+                    print("Deleting account....")
+                } label: {
+                    SettingRowView(
+                        imageName: "xmark.circle.fill" ,
+                        title: "Delete Account",
+                        tintColor: .red)
+                }
+
             }
         }
     }
