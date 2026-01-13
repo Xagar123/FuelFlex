@@ -12,7 +12,7 @@ struct ColorTheme {
     static let primary      = Color(hex: "#00FF7F")   // Neon Green
     static let secondary    = Color(hex: "#00CFFF")   // Electric Blue
     static let background   = Color(hex: "#0A0F1C")   // Deep Navy
-    static let surface      = Color.white
+    static let surface      = Color(hex: "#161D2F")
     static let textPrimary  = Color.white
     static let textSecondary = Color(hex: "#D9D9D9")  // Light Gray
     static let accent       = Color(hex: "#FF6B00")   // Orange Fuel

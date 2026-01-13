@@ -75,7 +75,7 @@ struct GoalSelectionView: View {
                     .disabled(selectedGoal == nil)
                     .padding()
                     
-                    NavigationLink("", destination: GenderSelectionView(),isActive: $isNavigation)
+                    NavigationLink("", destination: CoreMatrix(),isActive: $isNavigation)
                 }
                 .padding(.horizontal, 24)
             }

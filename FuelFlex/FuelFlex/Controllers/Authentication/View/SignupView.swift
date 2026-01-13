@@ -55,7 +55,7 @@ struct SignupView: View {
                             // MARK: - Sign Up Button
                             Button(action: {
                                 // Signup action
-//                                isNavigation.toggle()
+                                isNavigation.toggle()
                                 Task {
                                     try await viewModel.createUser(withEmail: email, password: password, fullName: name)
                                 } 

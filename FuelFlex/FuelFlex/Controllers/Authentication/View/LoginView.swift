@@ -15,6 +15,7 @@ struct LoginView: View {
     @State private var scale: CGFloat = 0.6
     @State private var opacity: Double = 0.0
     @State private var glow: Bool = false
+    @State private var isNavigateToDashboard = false
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var viewModel: AuthViewModel 
     
@@ -59,7 +60,13 @@ struct LoginView: View {
                     // Login Button
                     Button(action: {
                         Task {
-                            try await viewModel.signIn(withEmail: email, password: password)
+                            do {
+                                try await viewModel.signIn(withEmail: email, password: password)
+                                // navigate to main app screen after successful login -> DashboardView
+                                isNavigateToDashboard = true
+                            } catch {
+                                print(error.localizedDescription)
+                            }
                         }
                     }) {
                         
@@ -144,6 +151,10 @@ struct LoginView: View {
                 }
                 .padding(.horizontal, 24)
                 
+            }
+            .navigationDestination(isPresented: $isNavigateToDashboard) {
+                MainTabView()
+                    .preferredColorScheme(.dark)
             }
         }
     }
