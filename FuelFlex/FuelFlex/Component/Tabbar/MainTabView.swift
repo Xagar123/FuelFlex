@@ -28,6 +28,7 @@ struct MainTabView: View {
     
     @State private var selectedTab: Tab = .home
     @State private var showLogSheet = false
+    @State private var isCameraPresented = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -50,7 +51,9 @@ struct MainTabView: View {
            
             // 2. Custom Tab Bar Overlay
             CustomTabBar(selectedTab: $selectedTab, action: {
-                showLogSheet.toggle()
+//                showLogSheet.toggle()
+//                MainCameraView()
+                isCameraPresented.toggle()
             })
             .background {
                 ColorTheme.background
@@ -60,6 +63,11 @@ struct MainTabView: View {
                             y: -6)
             }
       
+            .navigationDestination(isPresented: $isCameraPresented) {
+                MainCameraView()
+                    .preferredColorScheme(.dark)
+            }
+
         }
         .edgesIgnoringSafeArea(.bottom)
     }

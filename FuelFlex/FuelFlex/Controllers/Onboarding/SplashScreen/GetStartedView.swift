@@ -5,127 +5,164 @@
 //  Created by sagar on 06/09/25.
 //
 
+
 import SwiftUI
 
 struct GetStartedView: View {
-    
-    @State private var scale: CGFloat = 0.6
+    @State private var scale: CGFloat = 0.8
     @State private var opacity: Double = 0.0
-    @State private var glow: Bool = false
+    @State private var logoGlow: Bool = false
     @State private var navigateToLogin = false
+    @State private var animateText = false
     
     var body: some View {
         ZStack {
-            // Background Gradient (from ColorTheme)
-            //            ColorTheme.getStartedGradient
-            ColorTheme.splashGradient
-                .ignoresSafeArea()
-            
-            VStack(spacing: 20) {
-                
-                Spacer()
-                // Logo with bounce + glow
-                Image("fuelFlexLogo")
+            // MARK: - Background Layer
+            ColorTheme.background.ignoresSafeArea()
+
+            ZStack {
+                Image("gym_hero_bg") // Replace with your high-res athletic asset
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: 220, height: 220)
-                    .scaleEffect(scale)
-                    .shadow(color: glow ? ColorTheme.primary.opacity(0.8) : .clear,
-                            radius: 20, x: 0, y: 0)
-                    .onAppear {
-                        withAnimation(.spring(response: 0.6,
-                                              dampingFraction: 0.5,
-                                              blendDuration: 0)) {
-                            self.scale = 1.0
-                        }
-                        withAnimation(.easeInOut(duration: 1)
-                            .repeatForever(autoreverses: true)) {
-                                self.glow.toggle()
-                            }
+                    .aspectRatio(contentMode: .fill)
+                    .frame(minWidth: 0, maxWidth: .infinity)
+                    .ignoresSafeArea()
+                    .opacity(0.4) // Subtle visibility to maintain focus on UI
+                
+                // Multi-layered Overlay for Depth
+                LinearGradient(
+                    colors: [
+                        ColorTheme.background,
+                        ColorTheme.background.opacity(0.7),
+                        ColorTheme.background.opacity(0.2),
+                        ColorTheme.background.opacity(0.8),
+                        ColorTheme.background
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                // Accent Ambient Glow
+                RadialGradient(
+                    colors: [ColorTheme.primary.opacity(0.15), .clear],
+                    center: .topLeading,
+                    startRadius: 0,
+                    endRadius: 600
+                )
+                .ignoresSafeArea()
+            }
+            
+            VStack(spacing: 0) {
+                // MARK: - Logo Section
+                Spacer()
+                
+                ZStack {
+                    // Pulsing Ring
+                    Circle()
+                        .stroke(ColorTheme.primary.opacity(logoGlow ? 0.3 : 0.1), lineWidth: 0)
+                        .frame(width: 240, height: 240)
+                        .scaleEffect(logoGlow ? 1.2 : 1.0)
+                    
+                    Image("fuelFlexLogo") // Ensure this asset exists
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 240, height: 240)
+                        .scaleEffect(scale)
+                        .shadow(color: ColorTheme.primary.opacity(logoGlow ? 0.6 : 0.2), radius: 30)
+                }
+                .onAppear {
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                        scale = 1.0
                     }
+                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                        logoGlow.toggle()
+                    }
+                }
                 
                 Spacer()
                 
-                // MARK: - Branding & Motivation
-                VStack(alignment: .leading, spacing: 10) {
-                    // Tagline 1
+                // MARK: - Messaging Section
+                VStack(alignment: .leading, spacing: -5) {
                     Text("FUEL YOUR BODY.")
-                        .font(.custom("FOX-Bold", size: 27))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [ColorTheme.primary, Color.white],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .kerning(1.0)
+                        .font(.system(size: 24, weight: .bold))
+                        .italic()
+                        .foregroundColor(ColorTheme.textSecondary)
+                        .opacity(animateText ? 1 : 0)
+                        .offset(x: animateText ? 0 : -20)
                     
-                    // Tagline 2 - Main Hero
-                    Text("FLEX YOUR LIMITS.")
-                        .font(.custom("FXLogo-Bold", size: 36))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [ColorTheme.primary, Color.white],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .kerning(1.5)
-                        .padding(.vertical, 2)
-                    
-                    // Motivational Subtext
-                    Text("An AI-powered coach to guide your workouts and nutrition.\nStay consistent, stay unstoppable.")
-                        .font(.custom("STIXTwoText_SemiBold", size: 14))
-                        .foregroundColor(Color.white)
-                        .lineSpacing(4)
-                        .padding(.top, 8)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                
-                Spacer().frame(height: 30)
-                
-                // MARK: - Get Started Button
-                Button(action: {
-                    navigateToLogin = true
-                }) {
-                    Text("Get Started")
-                        .font(.custom("Poppins-SemiBold", size: 18))
-                        .fontWeight(.bold)
+                    Text("FLEX YOUR\nLIMITS.")
+                        .font(.system(size: 56, weight: .black))
+                        .italic()
+                        .lineSpacing(-10)
                         .foregroundColor(ColorTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(ColorTheme.buttonGradientSoft)
-                        .cornerRadius(16)
-                        .shadow(radius: 5)
+                        .opacity(animateText ? 1 : 0)
+                        .offset(x: animateText ? 0 : -30)
+                    
+                    Rectangle()
+                        .fill(ColorTheme.primary)
+                        .frame(width: 80, height: 6)
+                        .padding(.top, 15)
+                        .scaleEffect(x: animateText ? 1 : 0, anchor: .leading)
+                    
+                    Text("The AI-powered coach that evolves with your sweat. Precision workouts. Elite nutrition. Zero excuses.")
+                        .font(.system(size: 16))
+                        .foregroundColor(ColorTheme.textSecondary)
+                        .padding(.top, 20)
+                        .padding(.trailing, 40)
+                        .lineSpacing(4)
+                        .opacity(animateText ? 0.8 : 0)
                 }
-                .padding(.horizontal, 24)
-                
-                // MARK: - Sign In Option
-                Button(action: {
-                    navigateToLogin = true
-                }) {
-                    HStack {
-                        Text("Already have an account?")
-                            .font(.custom("Poppins-Regular", size: 16))
-                            .foregroundColor(ColorTheme.textPrimary)
-                        
-                        Text("Sign in")
-                            .font(.custom("Poppins-SemiBold", size: 16))
-                            .foregroundColor(ColorTheme.textPrimary)
+                .padding(.horizontal, 30)
+                .onAppear {
+                    withAnimation(.easeOut(duration: 0.8).delay(0.3)) {
+                        animateText = true
                     }
                 }
-                .padding(.top)
-                .padding(.bottom, 24)
+                
+                Spacer()
+                
+                // MARK: - Action Section
+                VStack(spacing: 20) {
+                    Button(action: { navigateToLogin = true }) {
+                        HStack {
+                            Text("GET STARTED")
+                                .font(.system(size: 18, weight: .black))
+                                .tracking(2)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 18, weight: .bold))
+                        }
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 64)
+                        .background(ColorTheme.buttonGradient)
+                        .cornerRadius(20)
+                        .shadow(color: ColorTheme.primary.opacity(0.4), radius: 15, x: 0, y: 8)
+                    }
+                    
+                    Button(action: { navigateToLogin = true }) {
+                        HStack(spacing: 4) {
+                            Text("ALREADY A MEMBER?")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(ColorTheme.textSecondary)
+                            Text("LOG IN")
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundColor(ColorTheme.primary)
+                        }
+                    }
+                    .padding(.bottom, 30)
+                }
+                .padding(.horizontal, 30)
             }
         }
-        // Navigation to Login Screen
         .fullScreenCover(isPresented: $navigateToLogin) {
             LoginView()
         }
     }
 }
 
-#Preview {
-    GetStartedView()
+// MARK: - Preview
+struct GetStartedView_Previews: PreviewProvider {
+    static var previews: some View {
+        GetStartedView()
+    }
 }
