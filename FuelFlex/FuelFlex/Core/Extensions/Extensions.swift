@@ -28,6 +28,10 @@ extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape( RoundedCorner(radius: radius, corners: corners) )
     }
+    
+    func frame(maxWidth: CGFloat, multiplier: CGFloat) -> some View {
+        self.frame(maxWidth: maxWidth * multiplier)
+    }
 }
 
 struct RoundedCorner: Shape {

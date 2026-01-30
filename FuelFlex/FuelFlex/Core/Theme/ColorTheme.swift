@@ -70,5 +70,20 @@ struct ColorTheme {
         endPoint: .trailing
     )
     
+    static let cardGradient = LinearGradient(
+        gradient: Gradient(colors: [surface.opacity(0.95), surface.opacity(0.4)]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
 }
 
+struct Blur: UIViewRepresentable {
+    var style: UIBlurEffect.Style = .systemMaterial
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        return UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: style)
+    }
+}
