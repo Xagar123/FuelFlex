@@ -31,11 +31,12 @@ struct UserProfile {
 
 
 struct UserGoalMatrixView: View {
-    let profile = UserProfile(id: .gainMuscle, age: 25, heightCM: 170, weightKG: 57)
+//    let profile = UserProfile(id: .gainMuscle, age: 25, heightCM: 170, weightKG: 57)
     
     @State private var animatedCalories: Int = 0
     @State private var isAnimating = false
     @State var isNavigateToDashboard: Bool = false
+    @Binding var profile: UserProfile
     
     var stats: (calories: Int, protein: Int, carbs: Int, fats: Int) {
         let bmr = Double((10 * profile.weightKG) + (6 * profile.heightCM) - (5 * profile.age)) + 5.0
@@ -327,5 +328,6 @@ struct BackgroundGlows: View {
 }
 
 #Preview {
-    UserGoalMatrixView()
+    let profile = UserProfile(id: .gainMuscle, age: 25, heightCM: 170, weightKG: 57)
+    UserGoalMatrixView(profile: .constant(profile))
 }

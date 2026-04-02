@@ -194,225 +194,61 @@ struct FuelFlexHomeView: View {
 
 // --- Helper Components ---
 
-struct StatCard: View {
-    let icon: String
-    let value: String
-    let unit: String
-    let label: String
-    let color: Color
-    var isPulse: Bool = false
-    var pulseScale: CGFloat = 1.0
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(color.opacity(0.1))
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.system(size: 20, weight: .bold))
-                    .scaleEffect(isPulse ? pulseScale : 1.0)
-            }
-            .frame(width: 44, height: 44)
-            
-            VStack(spacing: 2) {
-                HStack(alignment: .lastTextBaseline, spacing: 2) {
-                    Text(value).font(.system(size: 20, weight: .black))
-                    Text(unit).font(.system(size: 10, weight: .bold)).foregroundColor(.gray)
-                }
-                Text(label).font(.system(size: 10, weight: .bold)).foregroundColor(.gray).tracking(1)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(
-            ZStack {
-                ColorTheme.surface
-                LinearGradient(gradient: Gradient(colors: [color.opacity(0.1), .clear]), startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
-        )
-        .cornerRadius(28)
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(Color.white.opacity(0.05), lineWidth: 1))
-    }
-}
-
-//struct FuelStatusCard: View {
+//struct StatCard: View {
+//    let icon: String
+//    let value: String
+//    let unit: String
+//    let label: String
+//    let color: Color
+//    var isPulse: Bool = false
+//    var pulseScale: CGFloat = 1.0
+//    
 //    var body: some View {
-//        VStack(spacing: 24) {
-//            HStack {
-//                VStack(alignment: .leading, spacing: 4) {
-//                    Text("FUEL STATUS").font(.system(size: 18, weight: .black))
-//                    Text("GOAL: 2,400 KCAL").font(.system(size: 10, weight: .bold)).foregroundColor(.gray)
-//                }
-//                Spacer()
-//                VStack(alignment: .trailing, spacing: 4) {
-//                    Text("1,850").font(.system(size: 22, weight: .black)).foregroundColor(ColorTheme.primary)
-//                    Text("CONSUMED").font(.system(size: 10, weight: .bold)).foregroundColor(.gray)
-//                }
+//        VStack(spacing: 12) {
+//            ZStack {
+//                RoundedRectangle(cornerRadius: 16)
+//                    .fill(color.opacity(0.1))
+//                Image(systemName: icon)
+//                    .foregroundColor(color)
+//                    .font(.system(size: 20, weight: .bold))
+//                    .scaleEffect(isPulse ? pulseScale : 1.0)
 //            }
+//            .frame(width: 44, height: 44)
 //            
-//            HStack(spacing: 20) {
-//                MacroRing(label: "PRO", progress: 0.65, color: ColorTheme.secondary)
-//                MacroRing(label: "CARB", progress: 0.75, color: ColorTheme.golden)
-//                MacroRing(label: "FAT", progress: 0.55, color: ColorTheme.accent)
-//                MacroRing(label: "FIB", progress: 0.80, color: ColorTheme.primary)
+//            VStack(spacing: 2) {
+//                HStack(alignment: .lastTextBaseline, spacing: 2) {
+//                    Text(value).font(.system(size: 20, weight: .black))
+//                    Text(unit).font(.system(size: 10, weight: .bold)).foregroundColor(.gray)
+//                }
+//                Text(label).font(.system(size: 10, weight: .bold)).foregroundColor(.gray).tracking(1)
 //            }
 //        }
-//        .padding(24)
+//        .frame(maxWidth: .infinity)
+//        .padding(.vertical, 20)
 //        .background(
 //            ZStack {
 //                ColorTheme.surface
-//                LinearGradient(gradient: Gradient(colors: [ColorTheme.primary.opacity(0.1), .clear]), startPoint: .topLeading, endPoint: .bottomTrailing)
+//                LinearGradient(gradient: Gradient(colors: [color.opacity(0.1), .clear]), startPoint: .topLeading, endPoint: .bottomTrailing)
 //            }
 //        )
-//        .cornerRadius(32)
-//        .overlay(RoundedRectangle(cornerRadius: 32).stroke(Color.white.opacity(0.1), lineWidth: 1))
+//        .cornerRadius(28)
+//        .overlay(RoundedRectangle(cornerRadius: 28).stroke(Color.white.opacity(0.05), lineWidth: 1))
 //    }
 //}
+//
+//
 
-//struct MacroRing: View {
-//    let label: String
-//    let progress: CGFloat
-//    let color: Color
-//    
+//struct HeaderButton: View {
+//    let icon: String
 //    var body: some View {
-//        VStack(spacing: 8) {
-//            ZStack {
-//                Circle().stroke(Color.white.opacity(0.05), lineWidth: 4)
-//                Circle()
-//                    .trim(from: 0, to: progress)
-//                    .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-//                    .rotationEffect(.degrees(-90))
-//                Text("\(Int(progress * 100))%")
-//                    .font(.system(size: 9, weight: .black))
-//            }
-//            .frame(width: 48, height: 48)
-//            Text(label).font(.system(size: 9, weight: .bold)).foregroundColor(.gray)
-//        }
+//        Image(systemName: icon)
+//            .font(.system(size: 18))
+//            .frame(width: 44, height: 44)
+//            .background(Blur(style: .systemUltraThinMaterialLight).opacity(0.2))
+//            .cornerRadius(16)
+//            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.2), lineWidth: 1))
 //    }
 //}
-
-struct FuelStatusCard: View {
-    var body: some View {
-        VStack(spacing: 28) {
-
-            // HEADER
-            HStack(alignment: .top) {
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Fuel Status")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(ColorTheme.textPrimary)
-
-                    Text("Goal · 2,400 kcal")
-                        .font(.caption)
-                        .foregroundColor(ColorTheme.textSecondary)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("1,850")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(ColorTheme.primary)
-
-                    Text("Consumed")
-                        .font(.caption)
-                        .foregroundColor(ColorTheme.textSecondary)
-                }
-            }
-
-            // MACRO RINGS
-            HStack(spacing: 24) {
-                MacroRing(label: "Protein", progress: 0.65, color: ColorTheme.secondary)
-                MacroRing(label: "Carbs", progress: 0.75, color: ColorTheme.golden)
-                MacroRing(label: "Fat", progress: 0.55, color: ColorTheme.accent)
-                MacroRing(label: "Fiber", progress: 0.80, color: ColorTheme.primary)
-            }
-        }
-        .padding(24)
-        .background(
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(ColorTheme.surface)
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            ColorTheme.primary.opacity(0.12),
-                            Color.clear
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        )
-        .cornerRadius(32)
-        .overlay(
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.25), radius: 14, y: 8)
-    }
-}
-
-struct MacroRing: View {
-    let label: String
-    let progress: CGFloat
-    let color: Color
-
-    private let ringSize: CGFloat = 52
-    private let totalHeight: CGFloat = 60
-    private let lineWidth: CGFloat = 5
-
-    var body: some View {
-        VStack(spacing: 6) {
-
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.08), lineWidth: lineWidth)
-
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        color,
-                        style: StrokeStyle(
-                            lineWidth: lineWidth,
-                            lineCap: .round
-                        )
-                    )
-                    .rotationEffect(.degrees(-90))
-
-                Text("\(Int(progress * 100))%")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(ColorTheme.textPrimary)
-                    .minimumScaleFactor(0.8)
-            }
-            .frame(width: ringSize, height: ringSize)
-
-            Text(label)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(ColorTheme.textSecondary)
-                .lineLimit(1)
-                .frame(height: 12) // 🔒 text height locked
-        }
-        .frame(width: 60, height: 80)
-        .clipped()                                   // ✂️ prevents overflow
-        .fixedSize()                                // 🚫 no layout negotiation
-    }
-}
-
-
-
-struct HeaderButton: View {
-    let icon: String
-    var body: some View {
-        Image(systemName: icon)
-            .font(.system(size: 18))
-            .frame(width: 44, height: 44)
-            .background(Blur(style: .systemUltraThinMaterialLight).opacity(0.2))
-            .cornerRadius(16)
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.2), lineWidth: 1))
-    }
-}
 
 struct NavIcon: View {
     let icon: String

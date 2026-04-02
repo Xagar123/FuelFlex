@@ -1,4 +1,3 @@
-//
 //  Dashboard.swift
 //  FuelFlex
 //
@@ -7,183 +6,287 @@
 
 import SwiftUI
 
+// MARK: - Models
+
+struct TodayWorkoutPlan: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let duration: Int
+    let exercises: Int
+    let calories: Int
+    let difficulty: Difficulty
+    let muscleGroups: [String]
+    let imageName: String
+    let isScheduled: Bool
+
+    enum Difficulty: String {
+        case beginner     = "BEGINNER"
+        case intermediate = "INTERMEDIATE"
+        case advanced     = "ADVANCED"
+
+        var color: Color {
+            switch self {
+            case .beginner:     return ColorTheme.primary
+            case .intermediate: return ColorTheme.secondary
+            case .advanced:     return ColorTheme.accent
+            }
+        }
+    }
+}
+
+struct SuggestedWorkout: Identifiable {
+    let id = UUID()
+    let title: String
+    let category: String
+    let duration: Int
+    let exercises: Int
+    let calories: Int
+    let rating: Double
+    let imageName: String
+    let tag: String
+    let tagColor: Color
+}
+
+// MARK: - Dashboard
+
 struct Dashboard: View {
-    
+
     let homeBanners: [HomeBanner] = [
-        HomeBanner(
-            image: "banner_workout2",
-            title: "Train Smarter 💪",
-            subtitle: "AI-powered workouts made for you"
+        HomeBanner(image: "banner_workout2",  title: "Train Smarter 💪",     subtitle: "AI-powered workouts made for you"),
+        HomeBanner(image: "banner_nutrition", title: "Fuel Your Body 🥗",    subtitle: "Track nutrition & hydration daily"),
+        HomeBanner(image: "banner_progress",  title: "See Real Progress 📈", subtitle: "Analytics that keep you motivated")
+    ]
+
+    let todayPlans: [TodayWorkoutPlan] = [
+        TodayWorkoutPlan(
+            title: "Upper Body Strength", subtitle: "Chest, Shoulders & Triceps",
+            duration: 45, exercises: 6, calories: 320,
+            difficulty: .intermediate, muscleGroups: ["Chest", "Triceps", "Shoulders"],
+            imageName: "workout_upper", isScheduled: true
         ),
-        HomeBanner(
-            image: "banner_nutrition",
-            title: "Fuel Your Body 🥗",
-            subtitle: "Track nutrition & hydration daily"
+        TodayWorkoutPlan(
+            title: "Core Blast", subtitle: "Abs & Obliques Focus",
+            duration: 25, exercises: 5, calories: 180,
+            difficulty: .beginner, muscleGroups: ["Core", "Abs"],
+            imageName: "workout_core", isScheduled: false
         ),
-        HomeBanner(
-            image: "banner_progress",
-            title: "See Real Progress 📈",
-            subtitle: "Analytics that keep you motivated"
+        TodayWorkoutPlan(
+            title: "HIIT Cardio", subtitle: "Full Body Fat Burn",
+            duration: 30, exercises: 8, calories: 400,
+            difficulty: .advanced, muscleGroups: ["Full Body"],
+            imageName: "workout_hiit", isScheduled: false
         )
     ]
+
+    let suggestedWorkouts: [SuggestedWorkout] = [
+        SuggestedWorkout(
+            title: "Push Day Power",     category: "STRENGTH",
+            duration: 50, exercises: 7, calories: 380, rating: 4.8,
+            imageName: "suggest_push",     tag: "TRENDING", tagColor: ColorTheme.accent
+        ),
+        SuggestedWorkout(
+            title: "Leg Day Destroyer",  category: "HYPERTROPHY",
+            duration: 55, exercises: 8, calories: 420, rating: 4.9,
+            imageName: "suggest_legs",     tag: "POPULAR",  tagColor: ColorTheme.primary
+        ),
+        SuggestedWorkout(
+            title: "Mobility Flow",      category: "RECOVERY",
+            duration: 20, exercises: 6, calories: 120, rating: 4.7,
+            imageName: "suggest_mobility", tag: "NEW",      tagColor: ColorTheme.secondary
+        ),
+        SuggestedWorkout(
+            title: "Pull & Grow",        category: "STRENGTH",
+            duration: 45, exercises: 6, calories: 350, rating: 4.6,
+            imageName: "suggest_pull",     tag: "TOP PICK", tagColor: ColorTheme.golden
+        )
+    ]
+
     @State private var bpm: Int = 72
     @State private var pulseScale: CGFloat = 1.0
-    
+
     var body: some View {
         ZStack(alignment: .top) {
             ColorTheme.background.ignoresSafeArea()
-            
-            ZStack(alignment: .bottom) {
-                Image("nav_bg")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 180)
-                    .clipped()
-                
-                // 🔥 Fade into background
-                LinearGradient(
-                    colors: [
-                        Color.clear,
-                        ColorTheme.background.opacity(0.4),
-                        ColorTheme.background
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 80)
-            }
-            .ignoresSafeArea(edges: .top)
-            
+
+            // Nav background image
+            Image("nav_bg")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 220)
+                        .clipped()
+                        .overlay(
+                            LinearGradient(
+                                colors: [
+                                    .clear,
+                                    ColorTheme.background.opacity(0.3),
+                                    ColorTheme.background.opacity(0.85),
+                                    ColorTheme.background
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .ignoresSafeArea(edges: .top)
+
             VStack(spacing: 0) {
-             
-                homeNavigationBarView
-                
-                ScrollView {
+
+                // ── Nav Bar ───────────────────────────────────────
+                HomeNavigationBar(
+                    userName: "Sagar",
+                    dateString: "Tuesday · Jan 13",
+                    coins: 1_240,
+                    notificationCount: 3
+                )
+
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 30) {
                         HomeBannerCarousel(banners: homeBanners)
-                        
-                        //addind vitals
                         vitalsView
-                        //
-//                        DailySummaryCard()
-//                            .padding(.horizontal)
-                        
-                        VStack {
-                            ColorTheme.background.ignoresSafeArea()
-                            ScrollView {
-                                ProgressSectionView()
-                            }
-                        }
-                        .padding(.top,-24)
+                        todayWorkoutSection
+                        suggestedWorkoutsSection
+                        Spacer(minLength: 30)
                     }
                     .padding(.vertical)
                 }
                 .navigationBarHidden(true)
             }
         }
-        .onAppear {
-            startHeartRateAnimation()
-        }
+        .onAppear { startHeartRateAnimation() }
     }
-    
-    var homeNavigationBarView: some View {
-        HStack(spacing: 16) {
 
-            // PROFILE IMAGE WITH ONLINE INDICATOR
-            ZStack(alignment: .bottomTrailing) {
+  
+    // MARK: - Vitals
 
-                Image("profile_pic")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 46, height: 46)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [ColorTheme.primary, ColorTheme.secondary],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2.5
-                            )
-                    )
-                    .shadow(color: ColorTheme.primary.opacity(0.4), radius: 6, y: 3)
-
-                // 🟢 Online Indicator
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 15, height: 15)
-                    .overlay(
-                        Circle()
-                            .stroke(ColorTheme.background, lineWidth: 2)
-                    )
-                    .offset(x: 1, y: 2)
-            }
-
-            // DATE (VERTICALLY CENTERED WITH PROFILE)
-            VStack(alignment: .leading, spacing: 4) {
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("SAGAR").font(.system(size: 28, weight: .black))
-                        HStack(spacing: 4) {
-                            Image(systemName: "calendar")
-                                .font(.caption)
-                                .foregroundColor(ColorTheme.primary)
-                            
-                            Text("Tuesday · Jan 13")
-                                .font(.caption.bold())
-                                .foregroundColor(ColorTheme.textSecondary)
-                        }
-                    }
-                    Spacer()
-                    HStack(spacing: 12) {
-                        HeaderButton(icon: "magnifyingglass")
-                        HeaderButton(icon: "bell.badge.fill")
-                    }
-                }
-
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 18)
-        .padding(.bottom, 14)
-
-    }
-    
     var vitalsView: some View {
         VStack(spacing: 24) {
-            // Vital Signs
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Label("VITAL SIGNS", systemImage: "timer")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.gray)
-                        .tracking(1)
-                    Spacer()
-                    Text("LIVE")
-                        .font(.system(size: 10, weight: .black))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(4)
-                }
-                
-                HStack(spacing: 12) {
-                    StatCard(icon: "heart.fill", value: "\(bpm)", unit: "BPM", label: "PULSE", color: ColorTheme.accent, isPulse: true, pulseScale: pulseScale)
-                    StatCard(icon: "drop.fill", value: "1.8", unit: "LTR", label: "WATER", color: ColorTheme.secondary)
-                    StatCard(icon: "figure.walk", value: "8.4", unit: "K", label: "STEPS", color: ColorTheme.primary)
-                }
+            VStack(spacing: 30) {
+                VitalsSection()
+                    .padding(.horizontal, 20)
             }
-            
-            // Fuel Status Card
             FuelStatusCard()
         }
         .padding(.horizontal)
         .offset(y: -20)
     }
-    
+
+    // MARK: - Today Workout Section
+
+    var todayWorkoutSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+
+            // Section header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(ColorTheme.buttonGradient)
+                            .frame(width: 3, height: 18)
+                        Text("TODAY'S PLAN")
+                            .font(.system(size: 13, weight: .black))
+                            .tracking(2)
+                            .foregroundColor(.white)
+                    }
+                    Text("3 workouts scheduled")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(ColorTheme.textSecondary)
+                        .padding(.leading, 9)
+                }
+                Spacer()
+                Button(action: {}) {
+                    HStack(spacing: 4) {
+                        Text("See All")
+                            .font(.system(size: 12, weight: .bold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [ColorTheme.primary, ColorTheme.secondary],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+
+         
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 14) {
+                    ForEach(todayPlans) { plan in
+                        TodayWorkoutCard(plan: plan)
+                            .frame(width: 220, height: 260)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
+            }
+            .frame(height: 272)
+            .scrollClipDisabled()
+            .contentMargins(.horizontal, 0, for: .scrollContent)
+
+        }
+    }
+
+    // MARK: - Suggested Workouts Section
+
+    var suggestedWorkoutsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+
+            // Section header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(ColorTheme.accentGradient)
+                            .frame(width: 3, height: 18)
+                        Text("SUGGESTED FOR YOU")
+                            .font(.system(size: 13, weight: .black))
+                            .tracking(2)
+                            .foregroundColor(.white)
+                    }
+                    Text("Based on your recent activity")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(ColorTheme.textSecondary)
+                        .padding(.leading, 9)
+                }
+                Spacer()
+                Button(action: {}) {
+                    HStack(spacing: 4) {
+                        Text("Explore")
+                            .font(.system(size: 12, weight: .bold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [ColorTheme.accent, ColorTheme.golden],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 14) {
+                    ForEach(suggestedWorkouts) { workout in
+                        SuggestedWorkoutCard(workout: workout)
+                            .frame(width: 220, height: 130)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
+            }
+            .frame(height: 282)
+            .scrollClipDisabled()
+            .contentMargins(.horizontal, 0, for: .scrollContent)
+        }
+    }
+
+    // MARK: - Helpers
+
     private func startHeartRateAnimation() {
         withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
             pulseScale = 1.15
@@ -193,6 +296,363 @@ struct Dashboard: View {
         }
     }
 }
+
+// MARK: - Today Workout Card
+
+struct TodayWorkoutCard: View {
+
+    let plan: TodayWorkoutPlan
+    @State private var pressed = false
+
+    var body: some View {
+        Button(action: {}) {
+            ZStack(alignment: .topLeading) {
+                
+                // Background + image
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "#0d1828"), Color(hex: "#182540")],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    Image(plan.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .clipped()
+                }
+                .frame(width: 220, height: 260)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                
+                // Gradient overlay
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear,                              location: 0.0),
+                                .init(color: ColorTheme.background.opacity(0.3),  location: 0.4),
+                                .init(color: ColorTheme.background.opacity(0.92), location: 1.0)
+                            ],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 220, height: 260)
+                
+                // Scheduled badge — top left
+                if plan.isScheduled {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(ColorTheme.primary)
+                            .frame(width: 6, height: 6)
+                        Text("SCHEDULED")
+                            .font(.system(size: 8, weight: .black))
+                            .tracking(1.5)
+                            .foregroundColor(ColorTheme.primary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(ColorTheme.primary.opacity(0.4), lineWidth: 1))
+                    .padding(12)
+                }
+                
+                // Difficulty badge — top right
+                HStack {
+                    Spacer()
+                    Text(plan.difficulty.rawValue)
+                        .font(.system(size: 7, weight: .black))
+                        .tracking(1)
+                        .foregroundColor(plan.difficulty.color)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(plan.difficulty.color.opacity(0.12))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(plan.difficulty.color.opacity(0.35), lineWidth: 1))
+                }
+                .padding(12)
+                
+                // Bottom content
+                VStack(alignment: .leading, spacing: 8) {
+                    Spacer()
+                    
+                    // Muscle chips
+                    HStack(spacing: 5) {
+                        ForEach(plan.muscleGroups, id: \.self) { group in
+                            Text(group)
+                                .font(.system(size: 8, weight: .bold))
+                                .tracking(0.8)
+                                .foregroundColor(ColorTheme.secondary.opacity(0.9))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(ColorTheme.secondary.opacity(0.1))
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule().stroke(ColorTheme.secondary.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                    }
+                    
+                    // Title & subtitle
+                    Text(plan.title)
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundColor(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    
+                    Text(plan.subtitle)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(ColorTheme.textSecondary)
+                        .lineLimit(1)
+                    
+                    // Stats row
+                    HStack(spacing: 0) {
+                        miniStat(icon: "clock.fill",  value: "\(plan.duration)m",    color: ColorTheme.primary)
+                        Spacer()
+                        miniStat(icon: "bolt.fill",   value: "\(plan.exercises) ex", color: ColorTheme.secondary)
+                        Spacer()
+                        miniStat(icon: "flame.fill",  value: "\(plan.calories) cal", color: ColorTheme.accent)
+                    }
+                    .padding(.top, 2)
+                    
+                    // CTA button
+                    HStack {
+                        Text("START WORKOUT")
+                            .font(.system(size: 11, weight: .black))
+                            .tracking(1.5)
+                            .foregroundColor(ColorTheme.background)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(ColorTheme.background)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(ColorTheme.buttonGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .shadow(color: ColorTheme.primary.opacity(0.35), radius: 8)
+                }
+                .padding(14)
+                .frame(width: 220, height: 260, alignment: .bottomLeading)
+            }
+            .frame(width: 220, height: 260)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                ColorTheme.primary.opacity(0.25),
+                                ColorTheme.secondary.opacity(0.15)
+                            ],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: ColorTheme.primary.opacity(0.08), radius: 16, x: 0, y: 8)
+            .scaleEffect(pressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: pressed)
+            // ✅ Use _onButtonGesture instead of simultaneousGesture
+            // It doesn't block the parent scroll recognizer
+            .onTapGesture { /* navigate */ }
+            ._onButtonGesture(
+                pressing: { isPressing in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        pressed = isPressing
+                    }
+                },
+                perform: {}
+            )
+        }
+    }
+
+    func miniStat(icon: String, value: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(color)
+            Text(value)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(ColorTheme.textSecondary)
+        }
+    }
+}
+
+// MARK: - Suggested Workout Card
+
+struct SuggestedWorkoutCard: View {
+
+    let workout: SuggestedWorkout
+    @State private var pressed = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+
+            // Image area
+            ZStack(alignment: .topLeading) {
+                ZStack {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "#0e1a2e"), Color(hex: "#1a2e48")],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+//                        .frame(width: 170, height: 130)
+                        .frame(width: 220, height: 130)
+
+                    Image(workout.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 220, height: 130)
+                        .clipped()
+                }
+
+                // Gradient on image
+                LinearGradient(
+                    colors: [.clear, ColorTheme.surface.opacity(0.5)],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(width: 220, height: 130)
+                .allowsHitTesting(false)
+
+                // Tag badge — top left
+                Text(workout.tag)
+                    .font(.system(size: 8, weight: .black))
+                    .tracking(1.2)
+                    .foregroundColor(ColorTheme.background)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(workout.tagColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .shadow(color: workout.tagColor.opacity(0.5), radius: 6)
+                    .padding(10)
+
+                // Rating — top right
+                HStack(spacing: 3) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 8))
+                        .foregroundColor(ColorTheme.golden)
+                    Text(String(format: "%.1f", workout.rating))
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .padding(10)
+                .frame(width: 220, alignment: .trailing)
+            }
+            .frame(width: 220, height: 130)
+            .clipped()
+
+            // Info area
+            VStack(alignment: .leading, spacing: 8) {
+
+                Text(workout.category)
+                    .font(.system(size: 9, weight: .black))
+                    .tracking(2)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [ColorTheme.primary, ColorTheme.secondary],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+
+                Text(workout.title)
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                // Stats
+                HStack(spacing: 10) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(ColorTheme.primary)
+                        Text("\(workout.duration)m")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(ColorTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 3) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(ColorTheme.secondary)
+                        Text("\(workout.exercises) ex")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(ColorTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 3) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(ColorTheme.accent)
+                        Text("\(workout.calories)")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(ColorTheme.textSecondary)
+                    }
+//                    Spacer()
+                }
+
+                // Add to plan
+                HStack(spacing: 5) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 12))
+                    Text("Add to Plan")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [ColorTheme.accent, ColorTheme.golden],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                )
+            }
+            .padding(12)
+            .frame(width: 220, alignment: .leading)
+            .background(ColorTheme.surface)
+        }
+        .frame(width: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    ColorTheme.secondary.opacity(0.2),
+                                    ColorTheme.primary.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(color: ColorTheme.secondary.opacity(0.07), radius: 14, x: 0, y: 6)
+                .scaleEffect(pressed ? 0.96 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: pressed)
+                // ✅ onTapGesture ONLY — no DragGesture at all
+                .onTapGesture {
+                    // handle navigation
+                }
+                // ✅ _onButtonGesture gives press state without blocking scroll
+                ._onButtonGesture(pressing: { isPressing in
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                        pressed = isPressing
+                    }
+                }, perform: {})
+    }
+}
+// MARK: - Preview
 
 #Preview {
     Dashboard()

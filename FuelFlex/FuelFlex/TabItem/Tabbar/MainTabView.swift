@@ -10,15 +10,15 @@ import SwiftUI
 // MARK: - Tab Definition
 enum Tab: String, CaseIterable {
     case home = "house.fill"
+    case workout = "figure.strengthtraining.traditional"
     case stats = "chart.bar.fill"
-    case plan = "calendar"
     case profile = "person.fill"
     
     var title: String {
         switch self {
         case .home: return "Home"
+        case .workout: return "Workouts"
         case .stats: return "Stats"
-        case .plan: return "Plan"
         case .profile: return "Profile"
         }
     }
@@ -30,7 +30,7 @@ struct MainTabView: View {
     @State private var showLogSheet = false
     @State private var isCameraPresented = false
     @State var isNavigateToDailyLog: Bool = false
-    
+    @State private var workoutPath: [String] = []
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -39,11 +39,11 @@ struct MainTabView: View {
                 case .home:
                     Dashboard()
 //                    FuelFlexHomeView()
+                case .workout:
+                    WorkoutRootView(path: $workoutPath)
                 case .stats:
                     StatsDashboardView()
-                case .plan:
-                    Text("Plan View")
-                        .foregroundColor(.white)
+               
                 case .profile:
                     ProfileView()
                 }
@@ -90,13 +90,13 @@ struct CustomTabBar: View {
                 // Background Bar
                 HStack(spacing: 0) {
                     TabButton(tab: .home, selectedTab: $selectedTab)
-                    TabButton(tab: .stats, selectedTab: $selectedTab)
+                    TabButton(tab: .workout, selectedTab: $selectedTab)
                     
                     // Space for Central Button
                     Spacer()
                         .frame(width: 80)
                     
-                    TabButton(tab: .plan, selectedTab: $selectedTab)
+                    TabButton(tab: .stats, selectedTab: $selectedTab)
                     TabButton(tab: .profile, selectedTab: $selectedTab)
                 }
                 .padding(.top, 15)

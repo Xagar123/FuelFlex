@@ -17,6 +17,7 @@ struct ColorTheme {
     static let textSecondary = Color(hex: "#D9D9D9")  // Light Gray
     static let accent       = Color(hex: "#FF6B00")   // Orange Fuel
     static let golden       = Color(hex: "#FFD700") // Gold (hex for golden yellow)
+    static let danger        = Color(hex: "#FF4444")
     
     // MARK: - Gradients
     static let getStartedGradient = LinearGradient(

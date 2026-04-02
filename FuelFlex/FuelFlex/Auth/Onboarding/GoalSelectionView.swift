@@ -45,7 +45,7 @@ struct GoalSelectionView: View {
                 
                 footerSection
             }
-            NavigationLink("", destination: CoreMatrixView(),isActive: $isNavigation)
+            NavigationLink("", destination: CoreMatrixView(goalId: $selectedGoalID),isActive: $isNavigation)
         }
     }
 }

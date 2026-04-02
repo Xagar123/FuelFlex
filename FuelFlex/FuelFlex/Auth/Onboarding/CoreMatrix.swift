@@ -293,6 +293,9 @@ struct CoreMatrixView: View {
     @State private var heightCM: Int = 175
     @State private var weightKG: Int = 72
     @State var isNavigateToDashboard: Bool = false
+    @Binding var goalId: String?
+    @State private var userProfile =
+            UserProfile(id: .gainMuscle, age: 24, heightCM: 175, weightKG: 72)
     
     var body: some View {
         ZStack {
@@ -325,7 +328,8 @@ struct CoreMatrixView: View {
 //                    .preferredColorScheme(.dark)
 //                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 
-                UserGoalMatrixView()
+                UserGoalMatrixView(profile: $userProfile)
+                    
             }
             .navigationBarBackButtonHidden()
         }
@@ -400,6 +404,20 @@ private extension CoreMatrixView {
             Button(action: {
                 // Action
                 withAnimation(.easeInOut(duration: 0.45)) {
+                    let id: GoalID
+                    if goalId == "lose-weight" {
+                        id = .loseWeight
+                    } else if goalId == "gain-muscle" {
+                        id = .gainMuscle
+                    } else {
+                        id = .stayFit
+                    }
+                    userProfile = UserProfile(
+                        id: id,
+                        age: age,
+                        heightCM: heightCM,
+                        weightKG: weightKG
+                    )
                     isNavigateToDashboard = true
                 }
             }) {
