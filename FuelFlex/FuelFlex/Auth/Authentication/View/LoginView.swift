@@ -166,14 +166,13 @@ import SwiftUI
 struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
-    @State private var isNavigateToDashboard = false
     @State private var logoScale: CGFloat = 0.8
     @State private var logoGlow: Bool = false
     @State private var animateFields: Bool = false
+    @State private var showError = false
     
     @Environment(\.dismiss) var dismiss
-    // In real app, ensure AuthViewModel is injected: @EnvironmentObject var viewModel: AuthViewModel
-    @StateObject private var viewModel = MockAuthViewModel()
+    @EnvironmentObject var viewModel: AuthViewModel
     
     var body: some View {
         NavigationStack {
@@ -209,11 +208,12 @@ struct LoginView: View {
                     footerSection
                 }
             }
-            .navigationDestination(isPresented: $isNavigateToDashboard) {
-                MainTabView()
-                    .preferredColorScheme(.dark)
-            }
             .navigationBarBackButtonHidden()
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 }
@@ -283,10 +283,11 @@ private extension LoginView {
         Button(action: {
             Task {
                 do {
-                    // try await viewModel.signIn(withEmail: email, password: password)
-                    isNavigateToDashboard = true
+                    try await viewModel.signIn(withEmail: email, password: password)
+                    dismiss()
                 } catch {
-                    print(error.localizedDescription)
+                    viewModel.errorMessage = error.localizedDescription
+                    showError = true
                 }
             }
         }) {
@@ -378,4 +379,5 @@ private extension LoginView {
 
 #Preview {
     LoginView()
+        .environmentObject(AuthViewModel())
 }

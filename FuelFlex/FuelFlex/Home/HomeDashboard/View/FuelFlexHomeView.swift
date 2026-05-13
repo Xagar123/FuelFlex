@@ -121,7 +121,7 @@ struct FuelFlexHomeView: View {
                         }
                         
                         // Fuel Status Card
-                        FuelStatusCard()
+                        FuelStatusCard(calorieGoal: 2400, proteinGoal: 142, carbsGoal: 210, fatsGoal: 58)
                     }
                     .padding(.horizontal, 24)
                     .offset(y: -20)

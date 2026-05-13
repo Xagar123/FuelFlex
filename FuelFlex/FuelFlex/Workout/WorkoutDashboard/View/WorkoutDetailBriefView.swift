@@ -7,43 +7,27 @@
 
 import SwiftUI
 
-// MARK: - Models
-struct WorkoutPhase: Identifiable {
-    let id = UUID()
-    let icon: String
-    let label: String
-}
-
-struct Exercise: Identifiable {
-    let id = UUID()
-    let name: String
-    let sets: Int
-    let reps: Int
-    let muscles: [String]
-    let imageName: String
-}
-
 // MARK: - WorkoutDetailBriefView
 struct WorkoutDetailBriefView: View {
     
+    @EnvironmentObject var planManager: WorkoutPlanManager
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPhase: Int = 1
+    
+    let workoutDay: WorkoutDay
+    @State private var selectedPhaseIndex: Int = 0
     @State var navigateToStartWorkout: Bool = false
     @State var navigateToModifyWorkout: Bool = false
     @Binding var rootView: WorkoutRoot
+    @Binding var navigateToWorkoutDetail: Bool
     
-    let phases: [WorkoutPhase] = [
-        WorkoutPhase(icon: "figure.walk", label: "Warm-up"),
-        WorkoutPhase(icon: "dumbbell.fill", label: "Main Sets"),
-        WorkoutPhase(icon: "bolt.fill", label: "Finisher"),
-        WorkoutPhase(icon: "cooldown", label: "Cool-down"),
-    ]
+    private var availablePhases: [WorkoutPhaseData] {
+        workoutDay.phases
+    }
     
-    let exercises: [Exercise] = [
-        Exercise(name: "Barbell Back Squat", sets: 4, reps: 8, muscles: ["QUADS", "GLUTES"], imageName: "figure.strengthtraining.traditional"),
-        Exercise(name: "Bulgarian Split Squat", sets: 3, reps: 12, muscles: ["QUADS", "CORE"], imageName: "figure.strengthtraining.functional"),
-        Exercise(name: "Leg Press", sets: 3, reps: 10, muscles: ["HAMSTRINGS", "QUADS"], imageName: "figure.strengthtraining.traditional"),
-    ]
+    private var currentPhaseExercises: [PlannedExercise] {
+        guard selectedPhaseIndex < availablePhases.count else { return [] }
+        return availablePhases[selectedPhaseIndex].exercises
+    }
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -51,47 +35,45 @@ struct WorkoutDetailBriefView: View {
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    
-                    // MARK: Hero
                     heroSection
                     
                     VStack(alignment: .leading, spacing: 20) {
-                        
-                        // MARK: Stats Bar
                         statsBar
-                        
-                        // MARK: Phase Selector
                         phaseSelector
-                        
-                        // MARK: Exercise List
                         exerciseList
-                        
                         Spacer(minLength: 120)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                 }
             }
-            .navigationDestination(isPresented: $navigateToStartWorkout) {
-                WorkoutActiveScreen()
-                    .preferredColorScheme(.dark)
+            .fullScreenCover(isPresented: $navigateToStartWorkout) {
+                WorkoutActiveScreen(workoutDay: workoutDay) {
+                    navigateToStartWorkout = false
+                }
+                .environmentObject(planManager)
+                .preferredColorScheme(.dark)
             }
             .navigationDestination(isPresented: $navigateToModifyWorkout) {
-                WeeklyPlanView(root: $rootView)
+                PlanEditorView(dayId: workoutDay.id)
                     .preferredColorScheme(.dark)
             }
             
-            // MARK: Bottom CTA
             bottomCTA
         }
         .ignoresSafeArea(edges: .top)
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            // Default to "main" phase if available
+            if let mainIdx = availablePhases.firstIndex(where: { $0.type == .main }) {
+                selectedPhaseIndex = mainIdx
+            }
+        }
     }
     
     // MARK: - Hero Section
     private var heroSection: some View {
         ZStack(alignment: .bottom) {
-            // Image area
             ZStack {
                 Rectangle()
                     .fill(
@@ -113,7 +95,6 @@ struct WorkoutDetailBriefView: View {
             .frame(height: 300)
             .clipped()
             
-            // Gradient fade into background
             LinearGradient(
                 colors: [Color.clear, ColorTheme.background],
                 startPoint: .center,
@@ -121,14 +102,14 @@ struct WorkoutDetailBriefView: View {
             )
             .frame(height: 300)
             
-            // Overlay content
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    TagPill(text: "STRENGTH", color: ColorTheme.primary)
-                    TagPill(text: "STABILITY", color: ColorTheme.secondary)
+                    ForEach(workoutDay.focusMuscles.prefix(2), id: \.self) { muscle in
+                        TagPill(text: muscle.displayName.uppercased(), color: ColorTheme.primary)
+                    }
                 }
                 
-                Text("Lower Body Strength")
+                Text(workoutDay.title)
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(ColorTheme.textPrimary)
             }
@@ -136,7 +117,6 @@ struct WorkoutDetailBriefView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
             
-            // Nav bar
             VStack {
                 HStack {
                     Button(action: { dismiss() }) {
@@ -149,10 +129,6 @@ struct WorkoutDetailBriefView: View {
                                     .foregroundColor(.white)
                             )
                     }
-                    Spacer()
-//                    Text("Workout Details")
-//                        .font(.system(size: 17, weight: .semibold))
-//                        .foregroundColor(.white)
                     Spacer()
                     Button(action: {}) {
                         Circle()
@@ -176,19 +152,19 @@ struct WorkoutDetailBriefView: View {
     // MARK: - Stats Bar
     private var statsBar: some View {
         HStack(spacing: 0) {
-            StatItem(icon: "clock", value: "45 min", color: ColorTheme.secondary)
+            StatItem(icon: "clock", value: "\(workoutDay.estimatedDuration) min", color: ColorTheme.secondary)
             
             Divider()
                 .frame(width: 1, height: 40)
                 .background(Color.white.opacity(0.1))
             
-            StatItem(icon: "bolt.fill", value: "520 kcal", color: ColorTheme.primary)
+            StatItem(icon: "bolt.fill", value: "\(workoutDay.estimatedCalories) kcal", color: ColorTheme.primary)
             
             Divider()
                 .frame(width: 1, height: 40)
                 .background(Color.white.opacity(0.1))
             
-            StatItem(icon: "chart.bar.fill", value: "Intermediate", color: ColorTheme.secondary)
+            StatItem(icon: "chart.bar.fill", value: planManager.currentPlan?.fitnessLevel.displayName ?? "—", color: ColorTheme.secondary)
         }
         .padding(.vertical, 16)
         .background(ColorTheme.surface)
@@ -199,23 +175,39 @@ struct WorkoutDetailBriefView: View {
     private var phaseSelector: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
-                ForEach(Array(phases.enumerated()), id: \.offset) { index, phase in
-                    PhaseItem(
-                        phase: phase,
-                        isSelected: selectedPhase == index,
-                        index: index,
-                        total: phases.count
-                    ) {
+                ForEach(Array(availablePhases.enumerated()), id: \.element.id) { index, phase in
+                    Button {
                         withAnimation(.spring(response: 0.3)) {
-                            selectedPhase = index
+                            selectedPhaseIndex = index
                         }
+                    } label: {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(selectedPhaseIndex == index ? ColorTheme.primary : ColorTheme.surface)
+                                    .frame(width: 60, height: 60)
+                                    .overlay(
+                                        Circle().stroke(
+                                            selectedPhaseIndex == index ? Color.clear : Color.white.opacity(0.15),
+                                            lineWidth: 1
+                                        )
+                                    )
+                                
+                                Image(systemName: phase.type.icon)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(selectedPhaseIndex == index ? ColorTheme.background : ColorTheme.textSecondary)
+                            }
+                            
+                            Text(phase.type.displayName)
+                                .font(.system(size: 11, weight: selectedPhaseIndex == index ? .semibold : .regular))
+                                .foregroundColor(selectedPhaseIndex == index ? ColorTheme.primary : ColorTheme.textSecondary)
+                        }
+                        .frame(height: 80)
                     }
                     
-                    
-                    if index < phases.count - 1 {
-                        // Connector line
+                    if index < availablePhases.count - 1 {
                         Rectangle()
-                            .fill(index < selectedPhase ? ColorTheme.primary.opacity(0.5) : Color.white.opacity(0.15))
+                            .fill(index < selectedPhaseIndex ? ColorTheme.primary.opacity(0.5) : Color.white.opacity(0.15))
                             .frame(width: 30, height: 1.5)
                     }
                 }
@@ -230,17 +222,17 @@ struct WorkoutDetailBriefView: View {
     private var exerciseList: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("Main Sets")
+                Text(availablePhases.indices.contains(selectedPhaseIndex) ? availablePhases[selectedPhaseIndex].type.displayName : "Exercises")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(ColorTheme.textPrimary)
-                Text("\(exercises.count) Exercises")
+                Text("\(currentPhaseExercises.count) Exercises")
                     .font(.system(size: 13))
                     .foregroundColor(ColorTheme.textSecondary)
             }
             
             VStack(spacing: 10) {
-                ForEach(exercises) { exercise in
-                    ExerciseRow(exercise: exercise)
+                ForEach(currentPhaseExercises) { exercise in
+                    PlannedExerciseRow(exercise: exercise)
                 }
             }
         }
@@ -250,7 +242,7 @@ struct WorkoutDetailBriefView: View {
     private var bottomCTA: some View {
         VStack(spacing: 12) {
             Button(action: {
-                self.navigateToStartWorkout = true
+                navigateToStartWorkout = true
             }) {
                 Text("Start Workout")
                     .font(.system(size: 17, weight: .bold))
@@ -262,7 +254,7 @@ struct WorkoutDetailBriefView: View {
             }
             
             Button(action: {
-                self.navigateToModifyWorkout = true
+                navigateToModifyWorkout = true
             }) {
                 Text("Modify Workout")
                     .font(.system(size: 14, weight: .medium))
@@ -296,9 +288,7 @@ struct TagPill: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(color.opacity(0.15))
-            .overlay(
-                Capsule().stroke(color.opacity(0.4), lineWidth: 1)
-            )
+            .overlay(Capsule().stroke(color.opacity(0.4), lineWidth: 1))
             .clipShape(Capsule())
     }
 }
@@ -321,55 +311,18 @@ struct StatItem: View {
     }
 }
 
-struct PhaseItem: View {
-    let phase: WorkoutPhase
-    let isSelected: Bool
-    let index: Int
-    let total: Int
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                ZStack {
-                    Circle()
-                        .fill(isSelected ? ColorTheme.primary : ColorTheme.surface)
-                        .frame(width: 60, height: 60)
-                        .overlay(
-                            Circle()
-                                .stroke(
-                                    isSelected ? Color.clear : Color.white.opacity(0.15),
-                                    lineWidth: 1
-                                )
-                        )
-                    
-                    Image(systemName: phase.icon == "cooldown" ? "snowflake" : phase.icon)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(isSelected ? ColorTheme.background : ColorTheme.textSecondary)
-                }
-                
-                Text(phase.label)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? ColorTheme.primary : ColorTheme.textSecondary)
-            }
-            .frame(height: 80)
-        }
-    }
-}
-
-struct ExerciseRow: View {
-    let exercise: Exercise
+struct PlannedExerciseRow: View {
+    let exercise: PlannedExercise
     @State private var isExpanded: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                // Exercise thumbnail
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(ColorTheme.background)
                         .frame(width: 64, height: 64)
-                    Image(systemName: exercise.imageName)
+                    Image(systemName: "figure.strengthtraining.traditional")
                         .font(.system(size: 26))
                         .foregroundColor(ColorTheme.primary.opacity(0.6))
                 }
@@ -379,17 +332,17 @@ struct ExerciseRow: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(ColorTheme.textPrimary)
                     
-                    Text("\(exercise.sets) Sets • \(exercise.reps) Reps")
+                    Text("\(exercise.sets) Sets • \(exercise.repRangeText) Reps")
                         .font(.system(size: 13))
                         .foregroundColor(ColorTheme.textSecondary)
                     
                     HStack(spacing: 6) {
-                        ForEach(exercise.muscles, id: \.self) { muscle in
-                            Text(muscle)
+                        ForEach(exercise.targetMuscles, id: \.self) { muscle in
+                            Text(muscle.displayName.uppercased())
                                 .font(.system(size: 10, weight: .bold))
                                 .tracking(0.5)
                                 .foregroundColor(
-                                    muscle == exercise.muscles.first ? ColorTheme.primary : ColorTheme.textSecondary
+                                    muscle == exercise.targetMuscles.first ? ColorTheme.primary : ColorTheme.textSecondary
                                 )
                         }
                     }
@@ -409,7 +362,6 @@ struct ExerciseRow: View {
                 }
             }
             
-            // Expanded detail
             if isExpanded {
                 VStack(spacing: 0) {
                     Divider()
@@ -422,7 +374,7 @@ struct ExerciseRow: View {
                                 Text("Set \(set)")
                                     .font(.system(size: 11))
                                     .foregroundColor(ColorTheme.textSecondary)
-                                Text("\(exercise.reps)")
+                                Text(exercise.repRangeText)
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(ColorTheme.textPrimary)
                                 Text("reps")
@@ -434,6 +386,34 @@ struct ExerciseRow: View {
                     }
                     .padding(.vertical, 14)
                     .padding(.horizontal, 14)
+                    
+                    // Show rest time and alternatives
+                    if exercise.restSeconds > 0 {
+                        HStack(spacing: 6) {
+                            Image(systemName: "timer")
+                                .font(.system(size: 11))
+                                .foregroundColor(ColorTheme.secondary)
+                            Text("Rest: \(exercise.restSeconds)s")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(ColorTheme.textSecondary)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
+                    }
+                    
+                    if !exercise.alternatives.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.system(size: 10))
+                                .foregroundColor(ColorTheme.textSecondary.opacity(0.6))
+                            Text("Alt: \(exercise.alternatives.joined(separator: ", "))")
+                                .font(.system(size: 11))
+                                .foregroundColor(ColorTheme.textSecondary.opacity(0.6))
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
+                    }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -442,10 +422,3 @@ struct ExerciseRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
-
-// MARK: - Preview
-//#Preview {
-//    NavigationStack {
-//        WorkoutDetailBriefView()
-//    }
-//}

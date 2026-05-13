@@ -50,6 +50,7 @@ struct RestTimerView: View {
     @State private var timerActive:   Bool = false
     @State private var timerFinished: Bool = false
     @State private var ringPulse:     Bool = false
+    @State private var displayTimer:  Timer? = nil
 
     // Initialise @State from stored props
     init(
@@ -67,7 +68,6 @@ struct RestTimerView: View {
     }
 
     let timerPresets: [Int] = [30, 60, 90, 120]
-    let countdown = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     // MARK: - Computed
     var progress: Double {
@@ -105,8 +105,16 @@ struct RestTimerView: View {
                 : ColorTheme.secondary.opacity(0.08),
             radius: 24, x: 0, y: 8
         )
-        .onReceive(countdown) { _ in
-            handleTick()
+        .onAppear {
+            startDisplayTimer()
+        }
+        .onDisappear {
+            displayTimer?.invalidate()
+            displayTimer = nil
+        }
+        .onChange(of: timerActive) { _ in
+            if timerActive { startDisplayTimer() }
+            else { displayTimer?.invalidate(); displayTimer = nil }
         }
     }
 
@@ -429,6 +437,15 @@ struct RestTimerView: View {
     }
 
     // MARK: - Logic
+
+    private func startDisplayTimer() {
+        displayTimer?.invalidate()
+        let timer = Timer(timeInterval: 1, repeats: true) { _ in
+            DispatchQueue.main.async { handleTick() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        displayTimer = timer
+    }
 
     func handleTick() {
         guard timerActive, timeRemaining > 0 else {

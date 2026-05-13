@@ -295,7 +295,7 @@ struct CoreMatrixView: View {
     @State var isNavigateToDashboard: Bool = false
     @Binding var goalId: String?
     @State private var userProfile =
-            UserProfile(id: .gainMuscle, age: 24, heightCM: 175, weightKG: 72)
+            UserProfile(id: .gainMuscle, age: 24, heightCM: 175, weightKG: 72, gender: .male)
     
     var body: some View {
         ZStack {
@@ -324,12 +324,7 @@ struct CoreMatrixView: View {
                 footerSection
             }
             .navigationDestination(isPresented: $isNavigateToDashboard) {
-//                MainTabView()
-//                    .preferredColorScheme(.dark)
-//                    .transition(.move(edge: .trailing).combined(with: .opacity))
-                
-                UserGoalMatrixView(profile: $userProfile)
-                    
+                FitnessLevelView(profile: $userProfile)
             }
             .navigationBarBackButtonHidden()
         }
@@ -416,7 +411,8 @@ private extension CoreMatrixView {
                         id: id,
                         age: age,
                         heightCM: heightCM,
-                        weightKG: weightKG
+                        weightKG: weightKG,
+                        gender: selectedGender
                     )
                     isNavigateToDashboard = true
                 }

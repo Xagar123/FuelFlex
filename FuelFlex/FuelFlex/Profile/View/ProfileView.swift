@@ -9,6 +9,9 @@ import SwiftUI
 
 struct ProfileView: View {
     @State private var spinRotation = 0.0
+    @EnvironmentObject var viewModel: AuthViewModel
+
+    private var user: FuelFlexUser? { viewModel.currentUser }
     
     var body: some View {
         ZStack {
@@ -58,9 +61,9 @@ struct ProfileView: View {
                                 .fill(ColorTheme.surface)
                                 .frame(width: 96, height: 96)
                                 .overlay(
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(ColorTheme.textSecondary)
+                                    Text(user?.initials ?? "?")
+                                        .font(.system(size: 36, weight: .bold))
+                                        .foregroundColor(ColorTheme.primary)
                                 )
                                 .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 2))
                             
@@ -77,12 +80,12 @@ struct ProfileView: View {
                         
                         VStack(spacing: 4) {
                             HStack {
-                                Text("Alex Rivers")
+                                Text(user?.fullName ?? "User")
                                     .font(.title2.bold())
                                 Image(systemName: "sword.fill")
                                     .foregroundColor(ColorTheme.primary)
                             }
-                            Text("Elite Rank • Pro Member")
+                            Text(user?.goal?.capitalized ?? "Fitness Enthusiast")
                                 .font(.caption.bold())
                                 .foregroundColor(.gray)
                                 .tracking(1)
@@ -93,48 +96,35 @@ struct ProfileView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("HEALTH FUEL")
+                                Text("DAILY TARGET")
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(.gray)
-                                Text("88%")
+                                Text("\(user?.dailyCalories ?? 0)")
                                     .font(.system(size: 36, weight: .bold))
                                     .foregroundColor(ColorTheme.primary)
+                                + Text(" kcal")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.gray)
                             }
                             Spacer()
-                            Image(systemName: "gauge.with.needle.fill")
+                            Image(systemName: "bolt.heart.fill")
                                 .font(.system(size: 32))
                                 .foregroundColor(ColorTheme.primary)
                         }
                         
-                        VStack(spacing: 8) {
-                            HStack {
-                                Text("Next Goal: Cyborg Rank").font(.caption2.bold())
-                                Spacer()
-                                Text("62% Done").font(.caption2).foregroundColor(.gray)
-                            }
-                            
-                            // Progress Bar
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color.black.opacity(0.3)).frame(height: 10)
-                                Capsule()
-                                    .fill(ColorTheme.primary)
-                                    .frame(width: 200, height: 10) // Mock 62%
-                                    .shadow(color: ColorTheme.primary.opacity(0.4), radius: 5)
-                            }
+                        // Macro breakdown
+                        HStack(spacing: 16) {
+                            macroLabel("Protein", "\(user?.proteinGrams ?? 0)g", ColorTheme.secondary)
+                            macroLabel("Carbs", "\(user?.carbsGrams ?? 0)g", ColorTheme.golden)
+                            macroLabel("Fats", "\(user?.fatsGrams ?? 0)g", ColorTheme.accent)
                         }
                         
-                        // AI Tip
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: "brain.head.profile")
-                                .foregroundColor(ColorTheme.secondary)
-                            Text("\"Your body is ready! AI Tip: Do a quick 15-min workout to burn extra fat today.\"")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.8))
-                                .lineSpacing(4)
+                        // User info row
+                        HStack(spacing: 16) {
+                            infoChip("Age", "\(user?.age ?? 0)")
+                            infoChip("Height", "\(user?.heightCM ?? 0) cm")
+                            infoChip("Gender", user?.gender?.capitalized ?? "--")
                         }
-                        .padding()
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
                     }
                     .padding(24)
                     .background(
@@ -149,10 +139,10 @@ struct ProfileView: View {
                     
                     // MARK: - Stats Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        StatBoxView(icon: "flame.fill", label: "Burned Today", value: "420 kcal", color: ColorTheme.accent)
-                        StatBoxView(icon: "applelogo", label: "Food Quality", value: "A+ Grade", color: ColorTheme.primary)
-                        StatBoxView(icon: "target", label: "Move Accuracy", value: "98%", color: ColorTheme.secondary)
-                        StatBoxView(icon: "trophy.fill", label: "Day Streak", value: "24 Days", color: ColorTheme.golden)
+                        StatBoxView(icon: "flame.fill", label: "Daily Calories", value: "\(user?.dailyCalories ?? 0) kcal", color: ColorTheme.accent)
+                        StatBoxView(icon: "figure.strengthtraining.traditional", label: "Fitness Level", value: user?.fitnessLevel?.capitalized ?? "--", color: ColorTheme.primary)
+                        StatBoxView(icon: "scalemass.fill", label: "Weight", value: "\(user?.weightKG ?? 0) kg", color: ColorTheme.secondary)
+                        StatBoxView(icon: "calendar", label: "Days / Week", value: "\(user?.daysPerWeek ?? 0) days", color: ColorTheme.golden)
                     }
                     .padding(.horizontal)
                     
@@ -176,7 +166,7 @@ struct ProfileView: View {
                         .cornerRadius(20)
                         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.05), lineWidth: 1))
                         
-                        Button(action: {}) {
+                        Button(action: { viewModel.signOut() }) {
                             HStack {
                                 Image(systemName: "rectangle.portrait.and.arrow.right")
                                 Text("Sign Out")
@@ -198,9 +188,41 @@ struct ProfileView: View {
         }
         .preferredColorScheme(.dark)
     }
+
+    // MARK: - Helpers
+
+    private func macroLabel(_ title: String, _ value: String, _ color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 16, weight: .black))
+                .foregroundColor(color)
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(color.opacity(0.1))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.2), lineWidth: 1))
+    }
+
+    private func infoChip(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
+            Text(label)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(10)
+    }
 }
 
-// MARK: - Subviews
+// MARK: - Reusable Subviews
 
 struct StatBoxView: View {
     let icon: String
@@ -261,5 +283,6 @@ struct SettingsRow: View {
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
         ProfileView()
+            .environmentObject(AuthViewModel())
     }
 }

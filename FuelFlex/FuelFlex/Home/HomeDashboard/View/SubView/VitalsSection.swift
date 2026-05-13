@@ -161,9 +161,23 @@ struct StatCard: View {
 
 struct VitalsSection: View {
 
+    @StateObject private var stepManager = StepCountManager()
     @State private var bpm: Int = 72
     @State private var pulseScale: CGFloat = 1.0
     @State private var livePulse: Bool = false
+
+    private var stepsDisplay: String {
+        guard stepManager.isAvailable else { return "--" }
+        if stepManager.steps >= 1000 {
+            return String(format: "%.1f", Double(stepManager.steps) / 1000.0)
+        }
+        return "\(stepManager.steps)"
+    }
+
+    private var stepsUnit: String {
+        guard stepManager.isAvailable, stepManager.steps >= 1000 else { return "" }
+        return "K"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -241,8 +255,8 @@ struct VitalsSection: View {
                 )
                 StatCard(
                     icon: "figure.walk",
-                    value: "8.4",
-                    unit: "K",
+                    value: stepsDisplay,
+                    unit: stepsUnit,
                     label: "STEPS",
                     color: ColorTheme.primary
                 )
@@ -251,6 +265,7 @@ struct VitalsSection: View {
         .onAppear {
             livePulse = true
             startHeartRateAnimation()
+            stepManager.requestAccessAndFetch()
         }
     }
 

@@ -111,10 +111,9 @@ struct SignupView: View {
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var confirmPassword: String = ""
-    @State private var isNavigation: Bool = false
     
-    // Mock ViewModel for previewing (In real app, use @EnvironmentObject)
-    @StateObject private var viewModel = MockAuthViewModel()
+    @EnvironmentObject var viewModel: AuthViewModel
+    @State private var showError = false
     
     var body: some View {
         NavigationStack {
@@ -149,11 +148,12 @@ struct SignupView: View {
                     footerSection
                 }
             }
-            .navigationDestination(isPresented: $isNavigation) {
-//                CoreMatrixView() // Navigating to the Matrix screen we built
-                GoalSelectionView()
-            }
             .navigationBarBackButtonHidden()
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 }
@@ -194,8 +194,15 @@ private extension SignupView {
     var actionSection: some View {
         VStack(spacing: 16) {
             Button(action: {
-                // Perform Signup logic
-                isNavigation = true
+                Task {
+                    do {
+                        try await viewModel.createUser(withEmail: email, password: password, fullName: name)
+                        // MainView will detect onboarding incomplete and show GoalSelectionView
+                    } catch {
+                        viewModel.errorMessage = error.localizedDescription
+                        showError = true
+                    }
+                }
             }) {
                 HStack {
                     Text("START JOURNEY")
@@ -284,14 +291,8 @@ struct CyberTextField: View {
     }
 }
 
-// MARK: - Mock ViewModel for Preview
-class MockAuthViewModel: ObservableObject {
-    func createUser(withEmail: String, password: String, fullName: String) async throws {
-        // Mock implementation
-    }
-}
-
 
 #Preview {
     SignupView()
+        .environmentObject(AuthViewModel())
 }

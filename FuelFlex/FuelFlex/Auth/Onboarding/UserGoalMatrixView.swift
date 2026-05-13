@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - Models
-enum GoalID: String {
+enum GoalID: String, Codable {
     case loseWeight = "lose-weight"
     case gainMuscle = "gain-muscle"
     case stayFit = "stay-fit"
@@ -23,10 +23,13 @@ enum GoalID: String {
 }
 
 struct UserProfile {
-    let id: GoalID
-    let age: Int
-    let heightCM: Int
-    let weightKG: Int
+    var id: GoalID
+    var age: Int
+    var heightCM: Int
+    var weightKG: Int
+    var gender: Gender = .male
+    var fitnessLevel: FitnessLevel = .beginner
+    var daysPerWeek: Int = 4
 }
 
 
@@ -35,8 +38,9 @@ struct UserGoalMatrixView: View {
     
     @State private var animatedCalories: Int = 0
     @State private var isAnimating = false
-    @State var isNavigateToDashboard: Bool = false
+    @State private var showError = false
     @Binding var profile: UserProfile
+    @EnvironmentObject var viewModel: AuthViewModel
     
     var stats: (calories: Int, protein: Int, carbs: Int, fats: Int) {
         let bmr = Double((10 * profile.weightKG) + (6 * profile.heightCM) - (5 * profile.age)) + 5.0
@@ -73,12 +77,12 @@ struct UserGoalMatrixView: View {
                 }
                 .padding(.horizontal, 24)
             }
-            .navigationDestination(isPresented: $isNavigateToDashboard) {
-                MainTabView()
-                    .preferredColorScheme(.dark)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
-            }
             .navigationBarBackButtonHidden(true)
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(viewModel.errorMessage ?? "Something went wrong")
+            }
         }
         .onAppear {
             withAnimation(.easeOut(duration: 1.0)) {
@@ -191,7 +195,20 @@ struct UserGoalMatrixView: View {
     
     private var actionButton: some View {
         Button(action: {
-            isNavigateToDashboard.toggle()
+            Task {
+                do {
+                    try await viewModel.completeOnboarding(
+                        profile: profile,
+                        calories: stats.calories,
+                        protein: stats.protein,
+                        carbs: stats.carbs,
+                        fats: stats.fats
+                    )
+                } catch {
+                    viewModel.errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
         }) {
             HStack {
                 Text("GO TO DASHBOARD")
@@ -328,6 +345,6 @@ struct BackgroundGlows: View {
 }
 
 #Preview {
-    let profile = UserProfile(id: .gainMuscle, age: 25, heightCM: 170, weightKG: 57)
+    let profile = UserProfile(id: .gainMuscle, age: 25, heightCM: 170, weightKG: 57, gender: .male)
     UserGoalMatrixView(profile: .constant(profile))
 }

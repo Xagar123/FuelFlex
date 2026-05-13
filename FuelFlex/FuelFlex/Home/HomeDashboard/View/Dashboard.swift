@@ -52,6 +52,16 @@ struct SuggestedWorkout: Identifiable {
 
 struct Dashboard: View {
 
+    @EnvironmentObject var authViewModel: AuthViewModel
+
+    private var user: FuelFlexUser? { authViewModel.currentUser }
+
+    private var todayDateString: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE · MMM d"
+        return f.string(from: Date())
+    }
+
     let homeBanners: [HomeBanner] = [
         HomeBanner(image: "banner_workout2",  title: "Train Smarter 💪",     subtitle: "AI-powered workouts made for you"),
         HomeBanner(image: "banner_nutrition", title: "Fuel Your Body 🥗",    subtitle: "Track nutrition & hydration daily"),
@@ -133,8 +143,8 @@ struct Dashboard: View {
 
                 // ── Nav Bar ───────────────────────────────────────
                 HomeNavigationBar(
-                    userName: "Sagar",
-                    dateString: "Tuesday · Jan 13",
+                    userName: user?.fullName.components(separatedBy: " ").first ?? "User",
+                    dateString: todayDateString,
                     coins: 1_240,
                     notificationCount: 3
                 )
@@ -164,7 +174,12 @@ struct Dashboard: View {
                 VitalsSection()
                     .padding(.horizontal, 20)
             }
-            FuelStatusCard()
+            FuelStatusCard(
+                    calorieGoal: user?.dailyCalories ?? 2400,
+                    proteinGoal: user?.proteinGrams ?? 142,
+                    carbsGoal: user?.carbsGrams ?? 210,
+                    fatsGoal: user?.fatsGrams ?? 58
+                )
         }
         .padding(.horizontal)
         .offset(y: -20)
@@ -656,5 +671,6 @@ struct SuggestedWorkoutCard: View {
 
 #Preview {
     Dashboard()
+        .environmentObject(AuthViewModel())
         .preferredColorScheme(.dark)
 }

@@ -7,104 +7,234 @@
 
 import SwiftUI
 
-// MARK: - Models
-enum WorkoutStatus {
-    case completed, today, locked, rest
+// MARK: - Main View
+struct WeeklyPlanView: View {
+    
+    @EnvironmentObject var planManager: WorkoutPlanManager
+    @Environment(\.dismiss) private var dismiss
+    @Binding var root: WorkoutRoot
+    @State private var editingDayId: UUID? = nil
+    @State private var dayEditorId: UUID? = nil
+    
+    private var schedule: [WorkoutDay] {
+        planManager.currentPlan?.weeklySchedule ?? []
+    }
+    
+    private var completedCount: Int { planManager.completedDaysThisWeek }
+    private var trainingCount: Int { planManager.trainingDaysThisWeek }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                ColorTheme.background.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Custom Navigation Bar
+                        HStack {
+                            Button(action: {
+                                root = .dashboard
+                                dismiss()
+                            }) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
+                            Spacer()
+                            Button(action: {}) {
+                                Image(systemName: "ellipsis")
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 10)
+                        
+                        // Header
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Your Weekly Plan")
+                                .font(.system(size: 36, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("BUILT FOR YOUR GOAL: \(planManager.currentPlan?.goal.displayName.uppercased() ?? "FITNESS")")
+                                .font(.system(size: 12, weight: .black))
+                                .foregroundColor(ColorTheme.secondary)
+                                .kerning(0.5)
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 24)
+                        .padding(.bottom, 30)
+                        
+                        // Progress Section
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("WEEKLY PROGRESS")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("\(completedCount) of \(trainingCount) workouts completed")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .fill(ColorTheme.surface)
+                                    Capsule()
+                                        .fill(ColorTheme.primary)
+                                        .frame(width: geo.size.width * (trainingCount > 0 ? CGFloat(completedCount) / CGFloat(trainingCount) : 0))
+                                        .shadow(color: ColorTheme.primary.opacity(0.4), radius: 4)
+                                }
+                            }
+                            .frame(height: 6)
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 32)
+                        
+                        // Workout List
+                        VStack(spacing: 4) {
+                            ForEach(schedule) { day in
+                                WeeklyPlanCard(day: day, onEdit: {
+                                    editingDayId = day.id
+                                }, onLongPress: {
+                                    dayEditorId = day.id
+                                })
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+            }
+            .navigationDestination(item: $editingDayId) { dayId in
+                PlanEditorView(dayId: dayId)
+                    .preferredColorScheme(.dark)
+            }
+            .sheet(item: $dayEditorId) { dayId in
+                DayEditorSheet(dayId: dayId)
+                    .environmentObject(planManager)
+                    .presentationDetents([.large])
+                    .preferredColorScheme(.dark)
+            }
+            .navigationBarBackButtonHidden()
+        }
+    }
 }
 
-struct WorkoutDay: Identifiable {
-    let id = UUID()
-    let day: String
-    let title: String
-    let duration: String?
-    let subtext: String?
-    let status: WorkoutStatus
-}
+// MARK: - Weekly Plan Card
 
-// MARK: - Components
-struct WorkoutCard: View {
-    let data: WorkoutDay
+struct WeeklyPlanCard: View {
+    let day: WorkoutDay
+    var onEdit: (() -> Void)? = nil
+    var onLongPress: (() -> Void)? = nil
     @State private var isExpanded = false
+    
+    private var isToday: Bool {
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        let mapped = weekday == 1 ? 7 : weekday - 1
+        return day.dayOfWeek.rawValue == mapped
+    }
+    
+    private var isPast: Bool {
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        let mapped = weekday == 1 ? 7 : weekday - 1
+        return day.dayOfWeek.rawValue < mapped
+    }
+    
+    private var isFuture: Bool { !isToday && !isPast && !day.isCompleted }
     
     var body: some View {
         VStack(spacing: 0) {
             // Main Row
             HStack(spacing: 16) {
-                // Status Icon
                 statusIcon
                 
-                // Content
                 VStack(alignment: .leading, spacing: 2) {
-                    if data.status == .today {
+                    if isToday {
                         Text("TODAY")
                             .font(.system(size: 10, weight: .black))
                             .kerning(1.2)
                             .foregroundColor(ColorTheme.secondary)
                     }
                     
-                    Text(data.day)
+                    Text(day.dayOfWeek.shortName.capitalized + "day")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(data.status == .today ? .white : ColorTheme.textSecondary)
+                        .foregroundColor(isToday ? .white : ColorTheme.textSecondary)
                     
-                    Text("\(data.title)\(data.duration != nil ? " • \(data.duration!)" : "")")
-                        .font(.system(size: 13))
-                        .foregroundColor(data.status == .today ? .white.opacity(0.9) : .gray)
+                    HStack(spacing: 4) {
+                        Text(day.title)
+                        if day.dayType == .training && day.estimatedDuration > 0 {
+                            Text("•")
+                            Text("\(day.estimatedDuration) min")
+                        }
+                    }
+                    .font(.system(size: 13))
+                    .foregroundColor(isToday ? .white.opacity(0.9) : .gray)
                     
-                    if let sub = data.subtext {
-                        Text(sub)
+                    if !day.focusMuscles.isEmpty {
+                        Text(day.focusMuscles.map(\.displayName).joined(separator: ", "))
                             .font(.system(size: 12))
-                            .foregroundColor(data.status == .today ? ColorTheme.textSecondary : .gray.opacity(0.8))
+                            .foregroundColor(isToday ? ColorTheme.textSecondary : .gray.opacity(0.8))
                     }
                 }
                 
                 Spacer()
-                
-                // Right Side Label/Status
                 trailingView
             }
             .padding(16)
             
             // Expanded View
-            if isExpanded && data.status != .locked {
+            if isExpanded && day.dayType == .training {
                 VStack(spacing: 16) {
                     Divider()
                         .background(Color.white.opacity(0.1))
                         .padding(.horizontal)
                     
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: "info.circle.fill")
-                                .foregroundColor(ColorTheme.secondary)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Session Overview")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                                Text("This session focuses on \(data.title.lowercased()). Follow prescribed rest periods to maximize hypertrophy.")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.gray)
-                                    .lineLimit(2)
+                    // Show main exercises
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(day.mainExercises) { exercise in
+                            HStack(spacing: 10) {
+                                Circle()
+                                    .fill(ColorTheme.primary.opacity(0.15))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(
+                                        Text("\(exercise.order + 1)")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(ColorTheme.primary)
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(exercise.name)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Text("\(exercise.sets) × \(exercise.repRangeText) reps")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
                             }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+                    
+                    if onEdit != nil {
+                        Button(action: { onEdit?() }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text("Edit Exercises")
+                                    .font(.system(size: 13, weight: .bold))
+                            }
+                            .foregroundColor(ColorTheme.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(ColorTheme.secondary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(ColorTheme.secondary.opacity(0.3), lineWidth: 1))
                         }
                         .padding(.horizontal)
-                        .padding(.bottom)
-                        
-                        if data.status == .today {
-                            Button(action: {}) {
-                                HStack {
-                                    Image(systemName: "play.fill")
-                                    Text("START WORKOUT")
-                                        .font(.system(size: 14, weight: .black))
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(ColorTheme.secondary)
-                                .foregroundColor(ColorTheme.background)
-                                .cornerRadius(12)
-                            }
-                            .padding(.horizontal)
-                            .padding(.bottom, 16)
-                        }
+                        .padding(.bottom, 16)
                     }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -112,31 +242,33 @@ struct WorkoutCard: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(data.status == .today ? Color.clear : ColorTheme.surface)
+                .fill(isToday ? Color.clear : ColorTheme.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(data.status == .today ? ColorTheme.secondary : Color.white.opacity(0.05), lineWidth: 2)
+                .stroke(isToday ? ColorTheme.secondary : Color.white.opacity(0.05), lineWidth: 2)
         )
-        .shadow(color: data.status == .today ? ColorTheme.secondary.opacity(0.15) : .clear, radius: 10)
+        .shadow(color: isToday ? ColorTheme.secondary.opacity(0.15) : .clear, radius: 10)
         .padding(.bottom, 8)
         .onTapGesture {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                if data.status != .locked {
+                if day.dayType == .training {
                     isExpanded.toggle()
                 }
             }
+        }
+        .onLongPressGesture {
+            onLongPress?()
         }
     }
     
     @ViewBuilder
     private var statusIcon: some View {
-        switch data.status {
-        case .completed:
+        if day.isCompleted {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 24))
                 .foregroundColor(ColorTheme.primary)
-        case .today:
+        } else if isToday {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color.white.opacity(0.1))
@@ -144,12 +276,12 @@ struct WorkoutCard: View {
                 Image(systemName: "dumbbell.fill")
                     .foregroundColor(ColorTheme.secondary)
             }
-        case .rest:
+        } else if day.dayType == .rest || day.dayType == .activeRecovery {
             Image(systemName: "figure.mind.and.body")
                 .font(.system(size: 24))
                 .foregroundColor(.gray)
-        case .locked:
-            Image(systemName: data.day == "Friday" ? "timer" : "calendar")
+        } else {
+            Image(systemName: isFuture ? "lock.fill" : "calendar")
                 .font(.system(size: 24))
                 .foregroundColor(.gray.opacity(0.5))
         }
@@ -158,29 +290,37 @@ struct WorkoutCard: View {
     @ViewBuilder
     private var trailingView: some View {
         HStack(spacing: 8) {
-            if data.status == .completed {
+            if day.isCompleted {
                 Text("COMPLETED")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.gray)
-            } else if data.status == .today && !isExpanded {
-                Text(data.duration ?? "")
+            } else if isToday && !isExpanded && day.estimatedDuration > 0 {
+                Text("\(day.estimatedDuration) min")
                     .font(.system(size: 11, weight: .bold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(ColorTheme.secondary.opacity(0.2))
                     .foregroundColor(ColorTheme.secondary)
                     .clipShape(Capsule())
-            } else if data.status == .rest {
+            } else if day.dayType == .rest || day.dayType == .activeRecovery {
                 Text("REST DAY")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.gray)
             }
             
-            if data.status == .locked {
+            Button {
+                onLongPress?()
+            } label: {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(ColorTheme.secondary.opacity(0.6))
+            }
+            
+            if isFuture && day.dayType == .training {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 14))
                     .foregroundColor(.gray.opacity(0.5))
-            } else if data.status != .rest {
+            } else if day.dayType == .training {
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.gray.opacity(0.5))
@@ -188,105 +328,3 @@ struct WorkoutCard: View {
         }
     }
 }
-
-// MARK: - Main View
-struct WeeklyPlanView: View {
-    
-    @Environment(\.dismiss) private var dismiss
-    @Binding var root: WorkoutRoot
-    
-    let workouts = [
-        WorkoutDay(day: "Monday", title: "Upper Body Push", duration: "45 min", subtext: nil, status: .completed),
-        WorkoutDay(day: "Tuesday", title: "Cardio Endurance", duration: "30 min", subtext: nil, status: .completed),
-        WorkoutDay(day: "Wednesday", title: "Lower Body Power", duration: "50 min", subtext: "Strength & Hypertrophy Focus", status: .today),
-        WorkoutDay(day: "Thursday", title: "Active Recovery & Mobility", duration: nil, subtext: nil, status: .rest),
-        WorkoutDay(day: "Friday", title: "Full Body HIIT", duration: "40 min", subtext: nil, status: .locked),
-        WorkoutDay(day: "Saturday", title: "Upper Body Pull", duration: "50 min", subtext: nil, status: .locked)
-    ]
-    
-    var body: some View {
-        
-        ZStack {
-            ColorTheme.background.ignoresSafeArea()
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Custom Navigation Bar
-                    HStack {
-                        Button(action: {
-                            root = .dashboard
-                            dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 22, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                        Button(action: {}) {
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 22, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 10)
-                    
-                    // Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Your Weekly Plan")
-                            .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text("BUILT FOR YOUR GOAL: FAT LOSS & STRENGTH")
-                            .font(.system(size: 12, weight: .black))
-                            .foregroundColor(ColorTheme.secondary)
-                            .kerning(0.5)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 24)
-                    .padding(.bottom, 30)
-                    
-                    // Progress Section
-                    VStack(spacing: 8) {
-                        HStack {
-                            Text("WEEKLY PROGRESS")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.gray)
-                            Spacer()
-                            Text("2 of 4 workouts completed")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule()
-                                    .fill(ColorTheme.surface)
-                                Capsule()
-                                    .fill(ColorTheme.primary)
-                                    .frame(width: geo.size.width * 0.5)
-                                    .shadow(color: ColorTheme.primary.opacity(0.4), radius: 4)
-                            }
-                        }
-                        .frame(height: 6)
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 32)
-                    
-                    // Workout List
-                    VStack(spacing: 4) {
-                        ForEach(workouts) { workout in
-                            WorkoutCard(data: workout)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-        }
-        .navigationBarBackButtonHidden()
-    }
-}
-
-//#Preview {
-//    WeeklyPlanView()
-//}

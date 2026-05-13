@@ -12,17 +12,24 @@ import SwiftUI
 
 struct FuelStatusCard: View {
 
+    let calorieGoal: Int
+    let proteinGoal: Int
+    let carbsGoal: Int
+    let fatsGoal: Int
+
     @State private var animate = false
 
-    let macros: [MacroData] = [
-        MacroData(label: "Protein", value: "142g", progress: 0.65, color: ColorTheme.secondary,  icon: "bolt.fill"),
-        MacroData(label: "Carbs",   value: "210g", progress: 0.75, color: ColorTheme.golden,     icon: "leaf.fill"),
-        MacroData(label: "Fat",     value: "58g",  progress: 0.55, color: ColorTheme.accent,     icon: "drop.fill"),
-        MacroData(label: "Fiber",   value: "24g",  progress: 0.80, color: ColorTheme.primary,    icon: "staroflife.fill")
-    ]
+    var macros: [MacroData] {
+        [
+            MacroData(label: "Protein", value: "\(proteinGoal)g", progress: 0.0, color: ColorTheme.secondary,  icon: "bolt.fill"),
+            MacroData(label: "Carbs",   value: "\(carbsGoal)g",   progress: 0.0, color: ColorTheme.golden,     icon: "leaf.fill"),
+            MacroData(label: "Fat",     value: "\(fatsGoal)g",    progress: 0.0, color: ColorTheme.accent,     icon: "drop.fill"),
+            MacroData(label: "Fiber",   value: "24g",             progress: 0.0, color: ColorTheme.primary,    icon: "staroflife.fill")
+        ]
+    }
 
-    let consumed:  Int = 1850
-    let goal:      Int = 2400
+    let consumed:  Int = 0
+    var goal:      Int { calorieGoal }
     var remaining: Int { goal - consumed }
     var calProgress: CGFloat { CGFloat(consumed) / CGFloat(goal) }
 
@@ -378,7 +385,7 @@ struct EnhancedMacroRing: View {
     ZStack {
         ColorTheme.background.ignoresSafeArea()
         ScrollView {
-            FuelStatusCard()
+            FuelStatusCard(calorieGoal: 2400, proteinGoal: 142, carbsGoal: 210, fatsGoal: 58)
                 .padding(.horizontal, 16)
                 .padding(.top, 40)
         }

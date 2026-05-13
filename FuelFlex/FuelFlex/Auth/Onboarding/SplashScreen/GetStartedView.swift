@@ -14,6 +14,7 @@ struct GetStartedView: View {
     @State private var logoGlow: Bool = false
     @State private var navigateToLogin = false
     @State private var animateText = false
+    @EnvironmentObject var viewModel: AuthViewModel
     
     var body: some View {
         ZStack {
@@ -156,6 +157,7 @@ struct GetStartedView: View {
         }
         .fullScreenCover(isPresented: $navigateToLogin) {
             LoginView()
+                .environmentObject(viewModel)
         }
     }
 }

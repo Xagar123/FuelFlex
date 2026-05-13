@@ -9,44 +9,59 @@ import SwiftUI
 
 struct MainCameraView: View {
     
-    enum AppView {
-        case home, camera, analysis
+    enum CameraFlow {
+        case capture, scanning, analysis
     }
-    @State private var currentView: AppView = .home
-    @State private var capturedImage: UIImage? = UIImage(named: "food")//nil
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var currentFlow: CameraFlow = .capture
+    @State private var capturedImage: UIImage?
     
     var logedData: (() -> Void)
     
+    private var cameraAvailable: Bool {
+        UIImagePickerController.isSourceTypeAvailable(.camera)
+    }
+    
     var body: some View {
         ZStack {
-            ColorTheme.background.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
             
-            switch currentView {
-            case .home:
-                CameraView {
-                    currentView = .camera
-                }
-            case .camera:
-                CameraCaptureView { image in
-                    capturedImage = image
-                    currentView = .analysis
-                } onDismiss: {
-                    currentView = .home
+            switch currentFlow {
+            case .capture:
+                ImagePicker(
+                    sourceType: cameraAvailable ? .camera : .photoLibrary,
+                    onCapture: { image in
+                        capturedImage = image
+                        withAnimation { currentFlow = .scanning }
+                    },
+                    onDismiss: {
+                        dismiss()
+                    }
+                )
+                .ignoresSafeArea()
+                
+            case .scanning:
+                if let image = capturedImage {
+                    ScanningAnimationView(image: image) {
+                        withAnimation { currentFlow = .analysis }
+                    }
+                    .transition(.opacity)
                 }
                 
             case .analysis:
-                AnalysisView(image: (UIImage(named: "food") ?? UIImage()), onBack: {
-//                    currentView = .home
-                    logedData()
-                })
+                if let image = capturedImage {
+                    AnalysisView(image: image, onBack: {
+                        logedData()
+                    })
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
-        
         }
+        .navigationBarBackButtonHidden()
     }
 }
 
 #Preview {
-    MainCameraView(logedData:  {
-        //
-    })
+    MainCameraView(logedData: {})
 }

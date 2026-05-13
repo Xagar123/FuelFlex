@@ -1,25 +1,23 @@
-//
-//  FuelFlexApp.swift
-//  FuelFlex
-//
-//  Created by sagar on 06/09/25.
-//
-
 import SwiftUI
+import Firebase
 
 @main
 struct FuelFlexApp: App {
-    
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-   
+
     @StateObject var viewModel = AuthViewModel()
-    
+    @StateObject var workoutPlanManager = WorkoutPlanManager()
+    @StateObject var exerciseLibrary = ExerciseLibraryManager()
+
+    init() {
+        FirebaseApp.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             MainView()
                 .environmentObject(viewModel)
+                .environmentObject(workoutPlanManager)
+                .environmentObject(exerciseLibrary)
         }
     }
 }
-
-

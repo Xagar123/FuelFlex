@@ -26,11 +26,13 @@ enum Tab: String, CaseIterable {
 
 struct MainTabView: View {
     
+    @EnvironmentObject var planManager: WorkoutPlanManager
     @State private var selectedTab: Tab = .home
     @State private var showLogSheet = false
     @State private var isCameraPresented = false
     @State var isNavigateToDailyLog: Bool = false
     @State private var workoutPath: [String] = []
+    @State private var showPlanGeneration: Bool = false
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -38,22 +40,17 @@ struct MainTabView: View {
                 switch selectedTab {
                 case .home:
                     Dashboard()
-//                    FuelFlexHomeView()
                 case .workout:
                     WorkoutRootView(path: $workoutPath)
                 case .stats:
                     StatsDashboardView()
-               
                 case .profile:
                     ProfileView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
            
-            // 2. Custom Tab Bar Overlay
             CustomTabBar(selectedTab: $selectedTab, action: {
-//                showLogSheet.toggle()
-//                MainCameraView()
                 isCameraPresented.toggle()
             })
             .background {
@@ -70,12 +67,22 @@ struct MainTabView: View {
                 }
                     .preferredColorScheme(.dark)
             }
-
         }
         .edgesIgnoringSafeArea(.bottom)
         .navigationDestination(isPresented: $isNavigateToDailyLog, destination: {
             DailyLogView()
         })
+        .fullScreenCover(isPresented: $showPlanGeneration) {
+            PlanGenerationSplashView(onDismiss: {
+                showPlanGeneration = false
+            })
+            .preferredColorScheme(.dark)
+        }
+        .onAppear {
+            if planManager.currentPlan == nil {
+                showPlanGeneration = true
+            }
+        }
     }
 }
 

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct PlanGenerationSplashView: View {
     
+    @EnvironmentObject var planManager: WorkoutPlanManager
     @State private var progress: Double = 0.0
     @State private var rotationAngle: Double = 0.0
-    @State private var isProgressCompleted: Bool = false
-    @StateObject private var viewModel = PlanGenerationViewModel()
-    @Binding var root: WorkoutRoot
+    @State private var showPlanPreview: Bool = false
+    var onDismiss: (() -> Void)? = nil
     
     private var phase: Int {
         if progress < 0.3 { return 1 }
@@ -29,9 +29,21 @@ struct PlanGenerationSplashView: View {
         return "Plan generated successfully!"
     }
     
-    
-    
     var body: some View {
+        ZStack {
+            if showPlanPreview {
+                GeneratedPlanPreview(onDismiss: {
+                    onDismiss?()
+                })
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                splashContent
+            }
+        }
+        .animation(.easeInOut(duration: 0.4), value: showPlanPreview)
+    }
+    
+    private var splashContent: some View {
         ZStack {
             ColorTheme.background
                 .ignoresSafeArea()
@@ -56,7 +68,6 @@ struct PlanGenerationSplashView: View {
                 
                 // Central Animation Area
                 ZStack {
-                    // Static Outer Rings
                     Circle()
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                         .frame(width: 320, height: 320)
@@ -65,29 +76,25 @@ struct PlanGenerationSplashView: View {
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                         .frame(width: 280, height: 280)
                     
-                    // Fast Orbital Dot
                     OrbitingDot(radius: 140, speed: 4.0)
                     
-                    // Rotating Tags Orbit
                     ZStack {
-                        TagView(icon: "target", text: "Hypertrophy", color: ColorTheme.primary)
+                        TagView(icon: "target", text: planManager.currentPlan?.goal.displayName ?? "Hypertrophy", color: ColorTheme.primary)
                             .offset(y: -140)
                             .rotationEffect(.degrees(0))
                         
-                        TagView(icon: "calendar", text: "4 Days/Week", color: ColorTheme.secondary)
+                        TagView(icon: "calendar", text: "\(planManager.currentPlan?.daysPerWeek ?? 4) Days/Week", color: ColorTheme.secondary)
                             .offset(y: -140)
                             .rotationEffect(.degrees(120))
                         
-                        TagView(icon: "dumbbell.fill", text: "Full Gym", color: ColorTheme.primary)
+                        TagView(icon: "dumbbell.fill", text: planManager.currentPlan?.fitnessLevel.displayName ?? "Full Gym", color: ColorTheme.primary)
                             .offset(y: -140)
                             .rotationEffect(.degrees(240))
                     }
                     .rotationEffect(.degrees(rotationAngle))
                     
-                    // Middle Pulse Ring
                     PulseRing()
                     
-                    // Center Core
                     VStack(spacing: 8) {
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .font(.system(size: 44, weight: .bold))
@@ -127,7 +134,6 @@ struct PlanGenerationSplashView: View {
                             .foregroundColor(ColorTheme.primary)
                     }
                     
-                    // Progress Bar
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: 10)
@@ -144,18 +150,10 @@ struct PlanGenerationSplashView: View {
                     Text("Structured using proven training principles")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(ColorTheme.textSecondary.opacity(0.5))
-                    
-                   
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
             }
-          
-//            .navigationDestination(isPresented: $viewModel.isPlanGenerated) {
-//                WeeklyPlanView(root: $root)
-//                    .preferredColorScheme(.dark)
-//            }
-            
         }
         .onAppear {
             withAnimation(.linear(duration: 8)) {
@@ -166,31 +164,27 @@ struct PlanGenerationSplashView: View {
             }
         }
         .task {
-            await viewModel.startPlanGeneration()
+            // Use a default profile for now — later pass real user data
+            let profile = UserProfile(id: .gainMuscle, age: 24, heightCM: 175, weightKG: 72, gender: .male)
+            await planManager.generatePlan(for: profile, userId: "current-user")
         }
-        .onChange(of: viewModel.isPlanGenerated) { newValue in
-            if newValue {
-//                path.append("plan")
-                root = .weeklyPlan
+        .onChange(of: planManager.currentPlan != nil) { hasPlan in
+            if hasPlan {
+                withAnimation {
+                    showPlanPreview = true
+                }
             }
         }
         .navigationBarBackButtonHidden()
-        
     }
 }
 
 
 struct HeaderView: View {
-    
-   
     var body: some View {
         VStack(spacing: 16) {
             HStack {
-                
-                Button {
-                    // Action for back button
-//                    dismiss()
-                } label: {
+                Button {} label: {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
@@ -292,8 +286,3 @@ struct PulseRing: View {
             }
     }
 }
-
-
-//#Preview {
-//    PlanGenerationSplashView()
-//}

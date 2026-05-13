@@ -1,27 +1,24 @@
-//
-//  MainView.swift
-//  FuelFlex
-//
-//  Created by sagar on 22/09/25.
-//
-
 import SwiftUI
 
 struct MainView: View {
-    @State private var showSplash = true
     @EnvironmentObject var viewModel: AuthViewModel
-    
+
     var body: some View {
         Group {
-            if viewModel.userSession  != nil {
-                SplashScreenView(showSplash: $showSplash)
-            } else {
+            if viewModel.isLoading {
+                SplashScreenView(showSplash: .constant(true))
+            } else if viewModel.userSession == nil {
                 GetStartedView()
+            } else if viewModel.currentUser?.isOnboardingComplete != true {
+                NavigationStack {
+                    GoalSelectionView()
+                }
+            } else {
+                NavigationStack {
+                    MainTabView()
+                        .preferredColorScheme(.dark)
+                }
             }
         }
     }
-}
-
-#Preview {
-    MainView()
 }
