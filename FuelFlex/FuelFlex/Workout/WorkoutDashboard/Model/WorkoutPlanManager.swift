@@ -11,6 +11,32 @@ class WorkoutPlanManager: ObservableObject {
     @Published var currentPlan: WorkoutPlan?
     @Published var workoutLogs: [WorkoutLog] = []
     @Published var isGenerating: Bool = false
+    @Published var isLoaded: Bool = false
+    
+    private let service: WorkoutPlanService
+    
+    init(service: WorkoutPlanService = FirestoreWorkoutPlanService()) {
+        self.service = service
+    }
+    
+    // MARK: - Persistence
+    
+    func loadPlan(userId: String) async {
+        do {
+            currentPlan = try await service.fetchPlan(userId: userId)
+            workoutLogs = try await service.fetchWorkoutLogs(userId: userId)
+        } catch {
+            print("Error loading plan: \(error)")
+        }
+        isLoaded = true
+    }
+    
+    private func persistPlan() {
+        guard let plan = currentPlan else { return }
+        Task {
+            try? await service.savePlan(plan)
+        }
+    }
     
     // MARK: - Plan Generation
     
@@ -29,6 +55,7 @@ class WorkoutPlanManager: ObservableObject {
             weeklySchedule: schedule
         )
         
+        persistPlan()
         isGenerating = false
     }
     
@@ -56,6 +83,11 @@ class WorkoutPlanManager: ObservableObject {
         // Mark day as completed
         if let planIdx = currentPlan?.weeklySchedule.firstIndex(where: { $0.id == log.workoutDayId }) {
             currentPlan?.weeklySchedule[planIdx].isCompleted = true
+        }
+        
+        persistPlan()
+        if let userId = currentPlan?.userId {
+            Task { try? await service.saveWorkoutLog(finalLog, userId: userId) }
         }
     }
     
@@ -87,6 +119,7 @@ class WorkoutPlanManager: ObservableObject {
             currentPlan?.weeklySchedule[idx].estimatedCalories = type == .activeRecovery ? 150 : 0
             currentPlan?.weeklySchedule[idx].title = type == .rest ? "Rest Day" : "Active Recovery"
         }
+        persistPlan()
     }
     
     func updateDayTitle(dayId: UUID, title: String) {
@@ -98,6 +131,7 @@ class WorkoutPlanManager: ObservableObject {
         guard let idx = currentPlan?.weeklySchedule.firstIndex(where: { $0.id == dayId }) else { return }
         let dayOfWeek = currentPlan!.weeklySchedule[idx].dayOfWeek
         currentPlan?.weeklySchedule[idx] = template.buildDay(dayOfWeek: dayOfWeek)
+        persistPlan()
     }
     
     func swapDays(dayId1: UUID, dayId2: UUID) {
@@ -108,6 +142,7 @@ class WorkoutPlanManager: ObservableObject {
         currentPlan?.weeklySchedule.swapAt(idx1, idx2)
         currentPlan?.weeklySchedule[idx1].dayOfWeek = dow1
         currentPlan?.weeklySchedule[idx2].dayOfWeek = dow2
+        persistPlan()
     }
     
     // MARK: - Plan Editing (Exercise-Level)
@@ -180,6 +215,7 @@ class WorkoutPlanManager: ObservableObject {
             ]
         )
         currentPlan?.weeklySchedule[idx] = trainingDay
+        persistPlan()
     }
     
     // MARK: - Static Plan Builder (hardcoded for now, replace with AI later)

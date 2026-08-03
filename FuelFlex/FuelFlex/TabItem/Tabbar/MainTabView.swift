@@ -79,7 +79,12 @@ struct MainTabView: View {
             .preferredColorScheme(.dark)
         }
         .onAppear {
-            if planManager.currentPlan == nil {
+            if planManager.isLoaded && planManager.currentPlan == nil {
+                showPlanGeneration = true
+            }
+        }
+        .onChange(of: planManager.isLoaded) { _, loaded in
+            if loaded && planManager.currentPlan == nil {
                 showPlanGeneration = true
             }
         }

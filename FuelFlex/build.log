@@ -1,0 +1,119 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace FuelFlex.xcworkspace -scheme FuelFlex -configuration Debug -derivedDataPath build CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = -
+    CODE_SIGNING_REQUIRED = NO
+
+Resolve Package Graph
+
+Fetching from https://github.com/apple/swift-protobuf.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/swift-protobuf-88c150a7' (safe.bareRepository is 'explicit')
+Fetching from https://github.com/google/app-check.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/app-check-bee8a00f' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/firebase/firebase-ios-sdk (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/firebase-ios-sdk-1072ecca' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/GoogleDataTransport.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/GoogleDataTransport-26106d20' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/GoogleUtilities.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/GoogleUtilities-5d0bbdf0' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/promises.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/promises-8c4acc3e' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/abseil-cpp-binary.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/abseil-cpp-binary-d18c01be' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/GoogleAppMeasurement.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/GoogleAppMeasurement-37058032' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/googleads/google-ads-on-device-conversion-ios-sdk (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/google-ads-on-device-conversion-ios-sdk-3a0884ed' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/firebase/leveldb.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/leveldb-a66e184b' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/grpc-binary.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/grpc-binary-ce96860d' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/firebase/nanopb.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/nanopb-22b0fa9d' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/gtm-session-fetcher.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/gtm-session-fetcher-23567c8d' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/interop-ios-for-google-sdks.git (cached)
+skipping cache due to an error: Couldn’t fetch updates from remote repositories:
+    fatal: cannot use bare repository '/Users/sdas4/Library/Caches/org.swift.swiftpm/repositories/interop-ios-for-google-sdks-3779b7b2' (safe.bareRepository is 'explicit')
+
+Fetching from https://github.com/google/app-check.git (cached)
+
+Fetching from https://github.com/firebase/leveldb.git (cached)
+
+Fetching from https://github.com/google/abseil-cpp-binary.git (cached)
+
+Fetching from https://github.com/firebase/firebase-ios-sdk (cached)
+
+Fetching from https://github.com/google/GoogleUtilities.git (cached)
+
+Fetching from https://github.com/googleads/google-ads-on-device-conversion-ios-sdk (cached)
+
+Fetching from https://github.com/google/GoogleAppMeasurement.git (cached)
+
+Creating working copy of package ‘abseil-cpp-binary’
+
+Creating working copy of package ‘GoogleUtilities’
+
+Creating working copy of package ‘app-check’
+
+Creating working copy of package ‘leveldb’
+
+Creating working copy of package ‘GoogleAppMeasurement’
+
+Creating working copy of package ‘google-ads-on-device-conversion-ios-sdk’
+
+Creating working copy of package ‘firebase-ios-sdk’
+
+Fetching from https://github.com/google/grpc-binary.git (cached)
+
+Fetching from https://github.com/google/promises.git (cached)
+
+Fetching from https://github.com/apple/swift-protobuf.git (cached)
+
+Fetching from https://github.com/google/gtm-session-fetcher.git (cached)
+
+Creating working copy of package ‘grpc-binary’
+
+Creating working copy of package ‘swift-protobuf’
+
+Creating working copy of package ‘gtm-session-fetcher’
+
+Checking out 3.2.0 of package ‘google-ads-on-device-conversion-ios-sdk’
+
+Checking out 12.5.0 of package ‘GoogleAppMeasurement’
+
+Checking out 8.1.0 of package ‘GoogleUtilities’
+
+Checking out 1.22.5 of package ‘leveldb’
+
+Checking out 11.2.0 of package ‘app-check’
+
+Checking out 1.2024072200.0 of package ‘abseil-cpp-binary’
+
+Checking out 1.33.3 of package ‘swift-protobuf’

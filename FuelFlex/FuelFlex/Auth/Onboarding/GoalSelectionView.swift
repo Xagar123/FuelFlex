@@ -8,7 +8,7 @@
 import SwiftUI
 
 
-struct Goal: Identifiable {
+struct OnboardingGoal: Identifiable {
     let id: String
     let title: String
     let description: String
@@ -20,15 +20,15 @@ struct GoalSelectionView: View {
     @State var isNavigation: Bool = false
     
     private var goals = [
-        Goal(id: "lose-weight",
+        OnboardingGoal(id: "lose-weight",
              title: "Lose Weight",
              description: "Burn fat and slim down with personalized cardio plans.",
              icon: "flame.fill"),
-        Goal(id: "gain-muscle",
+        OnboardingGoal(id: "gain-muscle",
              title: "Gain Muscle",
              description: "Build strength and size with heavy lifting routines.",
              icon: "figure.strengthtraining.traditional"),
-        Goal(id: "stay-fit",
+        OnboardingGoal(id: "stay-fit",
              title: "Stay Fit",
              description: "Maintain your health and keep your energy levels high.",
              icon: "heart.fill")
@@ -130,7 +130,7 @@ private extension GoalSelectionView {
 
 // MARK: - Components
 struct GoalCardView: View {
-    let goal: Goal
+    let goal: OnboardingGoal
     let isSelected: Bool
     let action: () -> Void
     

@@ -53,6 +53,7 @@ struct SuggestedWorkout: Identifiable {
 struct Dashboard: View {
 
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var planManager: WorkoutPlanManager
 
     private var user: FuelFlexUser? { authViewModel.currentUser }
 
@@ -68,49 +69,87 @@ struct Dashboard: View {
         HomeBanner(image: "banner_progress",  title: "See Real Progress 📈", subtitle: "Analytics that keep you motivated")
     ]
 
-    let todayPlans: [TodayWorkoutPlan] = [
-        TodayWorkoutPlan(
-            title: "Upper Body Strength", subtitle: "Chest, Shoulders & Triceps",
-            duration: 45, exercises: 6, calories: 320,
-            difficulty: .intermediate, muscleGroups: ["Chest", "Triceps", "Shoulders"],
-            imageName: "workout_upper", isScheduled: true
-        ),
-        TodayWorkoutPlan(
-            title: "Core Blast", subtitle: "Abs & Obliques Focus",
-            duration: 25, exercises: 5, calories: 180,
-            difficulty: .beginner, muscleGroups: ["Core", "Abs"],
-            imageName: "workout_core", isScheduled: false
-        ),
-        TodayWorkoutPlan(
-            title: "HIIT Cardio", subtitle: "Full Body Fat Burn",
-            duration: 30, exercises: 8, calories: 400,
-            difficulty: .advanced, muscleGroups: ["Full Body"],
-            imageName: "workout_hiit", isScheduled: false
-        )
-    ]
+    // MARK: - Live Plan Data
 
-    let suggestedWorkouts: [SuggestedWorkout] = [
-        SuggestedWorkout(
-            title: "Push Day Power",     category: "STRENGTH",
-            duration: 50, exercises: 7, calories: 380, rating: 4.8,
-            imageName: "suggest_push",     tag: "TRENDING", tagColor: ColorTheme.accent
-        ),
-        SuggestedWorkout(
-            title: "Leg Day Destroyer",  category: "HYPERTROPHY",
-            duration: 55, exercises: 8, calories: 420, rating: 4.9,
-            imageName: "suggest_legs",     tag: "POPULAR",  tagColor: ColorTheme.primary
-        ),
-        SuggestedWorkout(
-            title: "Mobility Flow",      category: "RECOVERY",
-            duration: 20, exercises: 6, calories: 120, rating: 4.7,
-            imageName: "suggest_mobility", tag: "NEW",      tagColor: ColorTheme.secondary
-        ),
-        SuggestedWorkout(
-            title: "Pull & Grow",        category: "STRENGTH",
-            duration: 45, exercises: 6, calories: 350, rating: 4.6,
-            imageName: "suggest_pull",     tag: "TOP PICK", tagColor: ColorTheme.golden
-        )
-    ]
+    private var todayPlans: [TodayWorkoutPlan] {
+        guard let schedule = planManager.currentPlan?.weeklySchedule else { return [] }
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        let mapped = weekday == 1 ? 7 : weekday - 1
+        // Today's workout first (scheduled), then next upcoming training days
+        let sorted = schedule
+            .filter { $0.dayType == .training }
+            .sorted { a, b in
+                let aIsToday = a.dayOfWeek.rawValue == mapped
+                let bIsToday = b.dayOfWeek.rawValue == mapped
+                if aIsToday != bIsToday { return aIsToday }
+                // Sort remaining by proximity to today
+                let aDist = (a.dayOfWeek.rawValue - mapped + 7) % 7
+                let bDist = (b.dayOfWeek.rawValue - mapped + 7) % 7
+                return aDist < bDist
+            }
+        return sorted.prefix(3).map { day in
+            TodayWorkoutPlan(
+                title: day.title,
+                subtitle: day.focusMuscles.map(\.displayName).joined(separator: ", "),
+                duration: day.estimatedDuration,
+                exercises: day.phases.flatMap(\.exercises).count,
+                calories: day.estimatedCalories,
+                difficulty: mapDifficulty(planManager.currentPlan?.fitnessLevel ?? .intermediate),
+                muscleGroups: day.focusMuscles.prefix(3).map(\.displayName),
+                imageName: imageForMuscles(day.focusMuscles),
+                isScheduled: day.dayOfWeek.rawValue == mapped
+            )
+        }
+    }
+
+    private var suggestedWorkouts: [SuggestedWorkout] {
+        guard let schedule = planManager.currentPlan?.weeklySchedule else { return [] }
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        let mapped = weekday == 1 ? 7 : weekday - 1
+        // Show upcoming training days (excluding today) as suggestions
+        let upcoming = schedule
+            .filter { $0.dayType == .training && $0.dayOfWeek.rawValue != mapped }
+            .sorted { a, b in
+                let aDist = (a.dayOfWeek.rawValue - mapped + 7) % 7
+                let bDist = (b.dayOfWeek.rawValue - mapped + 7) % 7
+                return aDist < bDist
+            }
+        let tags = [("NEXT UP", ColorTheme.accent), ("UPCOMING", ColorTheme.primary),
+                    ("LATER", ColorTheme.secondary), ("PLANNED", ColorTheme.golden)]
+        return upcoming.prefix(4).enumerated().map { idx, day in
+            let tag = tags[min(idx, tags.count - 1)]
+            return SuggestedWorkout(
+                title: day.title,
+                category: day.focusMuscles.first?.displayName.uppercased() ?? "TRAINING",
+                duration: day.estimatedDuration,
+                exercises: day.phases.flatMap(\.exercises).count,
+                calories: day.estimatedCalories,
+                rating: 4.7,
+                imageName: imageForMuscles(day.focusMuscles),
+                tag: tag.0,
+                tagColor: tag.1
+            )
+        }
+    }
+
+    private func mapDifficulty(_ level: FitnessLevel) -> TodayWorkoutPlan.Difficulty {
+        switch level {
+        case .beginner: return .beginner
+        case .intermediate: return .intermediate
+        case .advanced: return .advanced
+        }
+    }
+
+    private func imageForMuscles(_ muscles: [MuscleGroup]) -> String {
+        guard let primary = muscles.first else { return "workout_upper" }
+        switch primary {
+        case .chest, .shoulders, .triceps: return "workout_upper"
+        case .back, .biceps: return "suggest_pull"
+        case .quads, .hamstrings, .glutes, .calves: return "suggest_legs"
+        case .core: return "workout_core"
+        case .fullBody: return "workout_hiit"
+        }
+    }
 
     @State private var bpm: Int = 72
     @State private var pulseScale: CGFloat = 1.0
@@ -152,7 +191,9 @@ struct Dashboard: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 30) {
                         HomeBannerCarousel(banners: homeBanners)
+                        DailyGoalsSection()
                         vitalsView
+                        weeklyStreakView
                         todayWorkoutSection
                         suggestedWorkoutsSection
                         Spacer(minLength: 30)
@@ -185,6 +226,90 @@ struct Dashboard: View {
         .offset(y: -20)
     }
 
+    // MARK: - Weekly Streak
+
+    var weeklyStreakView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(ColorTheme.accentGradient)
+                    .frame(width: 3, height: 18)
+                Text("WEEKLY STREAK")
+                    .font(.system(size: 13, weight: .black))
+                    .tracking(2)
+                    .foregroundColor(.white)
+                Spacer()
+                Text("\(planManager.completedDaysThisWeek)/\(planManager.trainingDaysThisWeek)")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(ColorTheme.buttonGradient)
+            }
+            .padding(.horizontal, 20)
+
+            HStack(spacing: 8) {
+                ForEach(DayOfWeek.allCases, id: \.rawValue) { day in
+                    let workoutDay = planManager.currentPlan?.weeklySchedule.first { $0.dayOfWeek == day }
+                    let isTraining = workoutDay?.dayType == .training
+                    let isCompleted = workoutDay?.isCompleted == true
+                    let isToday = isDayToday(day)
+
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(circleFill(isCompleted: isCompleted, isTraining: isTraining, isToday: isToday))
+                                .frame(width: 36, height: 36)
+                                .overlay(
+                                    Circle().stroke(
+                                        circleBorder(isCompleted: isCompleted, isTraining: isTraining, isToday: isToday),
+                                        lineWidth: isToday ? 2 : 1
+                                    )
+                                )
+
+                            if isCompleted {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(ColorTheme.background)
+                            } else if isTraining {
+                                Image(systemName: "dumbbell.fill")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(isToday ? ColorTheme.primary : ColorTheme.textSecondary.opacity(0.5))
+                            }
+                        }
+
+                        Text(day.letter)
+                            .font(.system(size: 10, weight: isToday ? .black : .bold))
+                            .foregroundColor(isToday ? ColorTheme.primary : ColorTheme.textSecondary.opacity(0.6))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .background(ColorTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func isDayToday(_ day: DayOfWeek) -> Bool {
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        let mapped = weekday == 1 ? 7 : weekday - 1
+        return day.rawValue == mapped
+    }
+
+    private func circleFill(isCompleted: Bool, isTraining: Bool, isToday: Bool) -> Color {
+        if isCompleted { return ColorTheme.primary }
+        if isToday && isTraining { return ColorTheme.primary.opacity(0.15) }
+        return Color.white.opacity(0.04)
+    }
+
+    private func circleBorder(isCompleted: Bool, isTraining: Bool, isToday: Bool) -> Color {
+        if isCompleted { return ColorTheme.primary }
+        if isToday { return ColorTheme.primary.opacity(0.6) }
+        if isTraining { return ColorTheme.secondary.opacity(0.3) }
+        return Color.white.opacity(0.08)
+    }
+
     // MARK: - Today Workout Section
 
     var todayWorkoutSection: some View {
@@ -202,7 +327,7 @@ struct Dashboard: View {
                             .tracking(2)
                             .foregroundColor(.white)
                     }
-                    Text("3 workouts scheduled")
+                    Text("\(planManager.trainingDaysThisWeek) workouts this week · \(planManager.completedDaysThisWeek) done")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(ColorTheme.textSecondary)
                         .padding(.leading, 9)
@@ -225,21 +350,27 @@ struct Dashboard: View {
             }
             .padding(.horizontal, 20)
 
-         
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 14) {
-                    ForEach(todayPlans) { plan in
-                        TodayWorkoutCard(plan: plan)
-                            .frame(width: 220, height: 260)
+            if todayPlans.isEmpty {
+                Text("No plan generated yet. Head to Workouts to create one!")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(ColorTheme.textSecondary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 30)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 14) {
+                        ForEach(todayPlans) { plan in
+                            TodayWorkoutCard(plan: plan)
+                                .frame(width: 220, height: 260)
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 6)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 6)
+                .frame(height: 272)
+                .scrollClipDisabled()
+                .contentMargins(.horizontal, 0, for: .scrollContent)
             }
-            .frame(height: 272)
-            .scrollClipDisabled()
-            .contentMargins(.horizontal, 0, for: .scrollContent)
-
         }
     }
 
@@ -255,12 +386,12 @@ struct Dashboard: View {
                         RoundedRectangle(cornerRadius: 2)
                             .fill(ColorTheme.accentGradient)
                             .frame(width: 3, height: 18)
-                        Text("SUGGESTED FOR YOU")
+                        Text("UPCOMING WORKOUTS")
                             .font(.system(size: 13, weight: .black))
                             .tracking(2)
                             .foregroundColor(.white)
                     }
-                    Text("Based on your recent activity")
+                    Text("Your scheduled sessions this week")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(ColorTheme.textSecondary)
                         .padding(.leading, 9)
@@ -283,20 +414,27 @@ struct Dashboard: View {
             }
             .padding(.horizontal, 20)
 
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 14) {
-                    ForEach(suggestedWorkouts) { workout in
-                        SuggestedWorkoutCard(workout: workout)
-                            .frame(width: 220, height: 130)
+            if suggestedWorkouts.isEmpty {
+                Text("No upcoming workouts scheduled.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(ColorTheme.textSecondary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 30)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 14) {
+                        ForEach(suggestedWorkouts) { workout in
+                            SuggestedWorkoutCard(workout: workout)
+                                .frame(width: 220, height: 130)
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 6)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 6)
+                .frame(height: 282)
+                .scrollClipDisabled()
+                .contentMargins(.horizontal, 0, for: .scrollContent)
             }
-            .frame(height: 282)
-            .scrollClipDisabled()
-            .contentMargins(.horizontal, 0, for: .scrollContent)
         }
     }
 
@@ -672,5 +810,7 @@ struct SuggestedWorkoutCard: View {
 #Preview {
     Dashboard()
         .environmentObject(AuthViewModel())
+        .environmentObject(WorkoutPlanManager())
+        .environmentObject(GoalManager())
         .preferredColorScheme(.dark)
 }
